@@ -2,7 +2,7 @@
 {
 	internal class InvalidEntryPointException : AutmappingExceptionBase
 	{
-		protected override ExceptionTypes Type => ExceptionTypes.InvalidEntryPoint;
+		public override ExceptionTypes Type => ExceptionTypes.InvalidEntryPoint;
 
 		public InvalidEntryPointException(string message) : base(message)
 		{

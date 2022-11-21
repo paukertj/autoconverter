@@ -228,7 +228,8 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 				.Join(conversionInfo.To.Properties, from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to))
 				.ToList();
 
-			var conversionMap = new SyntaxNodeOrToken[properties.Count * 2 - 1];
+			int size = properties.Count * 2 - 1;
+			var conversionMap = new SyntaxNodeOrToken[size < 0 ? 0 : size];
 
 			int x = 0;
 			for (int y = 0; y < conversionMap.Length; y++)

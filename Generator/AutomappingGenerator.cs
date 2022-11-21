@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Exceptions;
+using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Generators.Converter;
 using Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowiring;
 using Paukertj.Autoconverter.Generator.Receivers;
@@ -9,6 +10,7 @@ using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
+using System;
 using System.Diagnostics;
 
 namespace Paukertj.Autoconverter.Generator
@@ -36,18 +38,11 @@ namespace Paukertj.Autoconverter.Generator
 			}
 			catch (AutmappingExceptionBase e)
 			{
-				var description = new DiagnosticDescriptor(
-					e.GetCode(),
-					"Unable to process automapping",
-					e.Message,
-					"Automapping",
-					DiagnosticSeverity.Error,
-					true,
-					helpLinkUri: e.GetHelpLinkUri());
-
-				var diagnostic = Diagnostic.Create(description, null);
-
-				context.ReportDiagnostic(diagnostic);
+				context.ReportDiagnostic(e);
+			}
+			catch (Exception e)
+			{
+				context.ReportDiagnostic(e);
 			}
 		}
 

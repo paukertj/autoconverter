@@ -2,7 +2,7 @@
 {
 	internal class UnableToBuildMapException : AutmappingExceptionBase
 	{
-		protected override ExceptionTypes Type => ExceptionTypes.UnableToBuildMap;
+		public override ExceptionTypes Type => ExceptionTypes.UnableToBuildMap;
 
 		public UnableToBuildMapException(string message) : base(message)
 		{
