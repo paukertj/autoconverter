@@ -1,4 +1,6 @@
-﻿namespace Paukertj.Autoconverter.Generator.Extensions
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Paukertj.Autoconverter.Generator.Extensions
 {
 	internal static class StringExtensions
 	{
@@ -23,5 +25,19 @@
 
 			return source.Remove(lastIndex);
 		}
+
+		internal static bool AttributeEquals(this string attr1, string attr2)
+		{
+			if (string.IsNullOrWhiteSpace(attr1) || string.IsNullOrWhiteSpace(attr2))
+			{
+				return false;
+			}
+
+			string withoutSuffix = attr2.TrimEnd("Attribute");
+
+            return 
+				attr1 == withoutSuffix ||
+                attr1 == attr2;
+        }
 	}
 }

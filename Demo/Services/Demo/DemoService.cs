@@ -35,8 +35,8 @@ namespace Paukertj.Autoconverter.Demo.Services.Demo
 
 			var someDomainObject = new DomainObject
 			{
-				//FirstName = "Jiri",
-				//LastName = "Paukert"
+				FirstName = "Jiri",
+				LastName = "Paukert"
 			};
 
 			//var infrastructureObjectWithNesting = _convertingService.Convert<DomainObjectWithNesting, InfrastructureObjectWithNesting>(domainObjectWithNesting);

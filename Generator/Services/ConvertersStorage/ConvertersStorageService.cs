@@ -6,235 +6,255 @@ using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Exceptions;
 using System.Collections.Generic;
 using System.Linq;
+using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
+using System.Xml.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 {
-	internal class ConvertersStorageService : IConvertersStorageService
-	{
-		private readonly ISemanticAnalysisService _semanticAnalysisService;
-		private readonly Dictionary<string, ConversionInfo> _conversionsStore = new Dictionary<string, ConversionInfo>();
-		private readonly HashSet<string> _conversionsForm = new HashSet<string>();
+    internal class ConvertersStorageService : IConvertersStorageService
+    {
+        private readonly ISemanticAnalysisService _semanticAnalysisService;
+        private readonly Dictionary<string, ConversionInfo> _conversionsStore = new Dictionary<string, ConversionInfo>();
+        private readonly HashSet<string> _conversionsForm = new HashSet<string>();
+        private readonly IAutoconverterPropertyIgnoreService _autoconverterPropertyIgnoreService;
 
-		public ConvertersStorageService(ISemanticAnalysisService semanticAnalysisService)
-		{
-			_semanticAnalysisService = semanticAnalysisService;
-		}
 
-		public IReadOnlyList<ConversionInfo> GetConverters()
-		{
-			return _conversionsStore.Values
-				.ToList();
-		}
+        public ConvertersStorageService(ISemanticAnalysisService semanticAnalysisService, IAutoconverterPropertyIgnoreService autoconverterPropertyIgnoreService)
+        {
+            _semanticAnalysisService = semanticAnalysisService;
+            _autoconverterPropertyIgnoreService = autoconverterPropertyIgnoreService;
+        }
 
-		public void StoreConverter(GenericNameSyntax genericNameSyntax)
-		{
-			var genericsArguments = genericNameSyntax
-				.DescendantNodes()
-				.OfType<TypeArgumentListSyntax>()
-				.FirstOrDefault()?.Arguments;
+        public IReadOnlyList<ConversionInfo> GetConverters()
+        {
+            return _conversionsStore.Values
+                .ToList();
+        }
 
-			if (genericsArguments == null || genericsArguments.Value.Count != 2)
-			{
-				return;
-			}
+        public void StoreConverter(GenericNameSyntax genericNameSyntax)
+        {
+            var genericsArguments = genericNameSyntax
+                .DescendantNodes()
+                .OfType<TypeArgumentListSyntax>()
+                .FirstOrDefault()?.Arguments;
 
-			StoreMap(genericsArguments.Value.First(), genericsArguments.Value.Last());
-		}
+            if (genericsArguments == null || genericsArguments.Value.Count != 2)
+            {
+                return;
+            }
 
-		private void StoreMap(TypeSyntax fromTypeSyntax, TypeSyntax toTypeSyntax)
-		{
-			var from = GetConversionMember(fromTypeSyntax);
-			var to = GetConversionMember(toTypeSyntax);
+            StoreMap(genericsArguments.Value.First(), genericsArguments.Value.Last());
+        }
 
-			StoreMap(from, to);
-		}
+        private void StoreMap(TypeSyntax fromTypeSyntax, TypeSyntax toTypeSyntax)
+        {
+            var from = GetConversionMember(fromTypeSyntax);
+            var to = GetConversionMember(toTypeSyntax);
 
-		private void StoreMap(ConversionMember from, ConversionMember to)
-		{
-			ValidateForClassReferencesAndStore(from, to);
+            StoreMap(from, to);
+        }
 
-			var conversionInfo = new ConversionInfo(from, to);
+        private void StoreMap(ConversionMember from, ConversionMember to)
+        {
+            ValidateForClassReferencesAndStore(from, to);
 
-			if (_conversionsStore.ContainsKey(conversionInfo.Id))
-			{
-				return;
-			}
+            var conversionInfo = new ConversionInfo(from, to);
 
-			// TODO: Validate map!
+            if (_conversionsStore.ContainsKey(conversionInfo.Id))
+            {
+                return;
+            }
 
-			_conversionsStore.Add(conversionInfo.Id, conversionInfo);
-			_conversionsForm.Add(from.FullName);
-		}
+            // TODO: Validate map!
 
-		private void ValidateForClassReferencesAndStore(ConversionMember from, ConversionMember to)
-		{
-			CheckForOrphans(from, to);
+            _conversionsStore.Add(conversionInfo.Id, conversionInfo);
+            _conversionsForm.Add(from.FullName);
+        }
 
-			var fromPropertiesWithOfSomethingComplex = from.Properties
-				.Where(HasTypeThatHasProperties)
-				.ToList();
+        private void ValidateForClassReferencesAndStore(ConversionMember from, ConversionMember to)
+        {
+            CheckForOrphans(from, to);
 
-			if (fromPropertiesWithOfSomethingComplex.Any() == false)
-			{
-				return;
-			}
+            var fromPropertiesWithOfSomethingComplex = from.Properties
+                .Where(HasTypeThatHasProperties)
+                .ToList();
 
-			// So fromPropertiesWithOfSomethingComplex now contains list of properties with type, that need a new map
+            if (fromPropertiesWithOfSomethingComplex.Any() == false)
+            {
+                return;
+            }
 
-			var conversions = fromPropertiesWithOfSomethingComplex
-				.Join(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new ConversionTupple(f, t))
-				.ToList();
+            // So fromPropertiesWithOfSomethingComplex now contains list of properties with type, that need a new map
 
-			// I have to segregate generics - so for example if I have IEnumerable<T> I have to create convertor for T, the IEnumerable will be handled in converting service
+            var conversions = fromPropertiesWithOfSomethingComplex
+                .Join(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new ConversionTupple(f, t))
+                .ToList();
 
-			var conversionsToRemove = new List<ConversionTupple>();
+            // I have to segregate generics - so for example if I have IEnumerable<T> I have to create convertor for T, the IEnumerable will be handled in converting service
 
-			foreach (var conversion in conversions)
-			{
-				var fromConversionType = GetConversionTypeForGenerics(conversion.From);
+            var conversionsToRemove = new List<ConversionTupple>();
 
-				if (fromConversionType == null)
-				{
-					conversionsToRemove.Add(conversion);
-					continue;
-				}
+            foreach (var conversion in conversions)
+            {
+                var fromConversionType = GetConversionTypeForGenerics(conversion.From);
 
-				var toConversionType = GetConversionTypeForGenerics(conversion.To);
+                if (fromConversionType == null)
+                {
+                    conversionsToRemove.Add(conversion);
+                    continue;
+                }
 
-				if (toConversionType == null)
-				{
-					conversionsToRemove.Add(conversion);
-					continue;
-				}
+                var toConversionType = GetConversionTypeForGenerics(conversion.To);
 
-				conversion.From.ChangeConversionType(fromConversionType);
-				conversion.To.ChangeConversionType(toConversionType);
+                if (toConversionType == null)
+                {
+                    conversionsToRemove.Add(conversion);
+                    continue;
+                }
 
-				// TODO: Here I have to say if it is list or not, if it is, I have to pass it in new instance (?)
-			}
+                conversion.From.ChangeConversionType(fromConversionType);
+                conversion.To.ChangeConversionType(toConversionType);
 
-			conversions.RemoveRange(conversionsToRemove);
+                // TODO: Here I have to say if it is list or not, if it is, I have to pass it in new instance (?)
+            }
 
-			foreach (var map in conversions)
-			{
-				var fromConversionMember = GetConversionMember(map.From.TypeSymbolForConversion);
-				var toConversionMember = GetConversionMember(map.To.TypeSymbolForConversion);
+            conversions.RemoveRange(conversionsToRemove);
 
-				map.From.WillRequireConversion();
-				map.To.WillRequireConversion();
+            foreach (var map in conversions)
+            {
+                var fromConversionMember = GetConversionMember(map.From.TypeSymbolForConversion);
+                var toConversionMember = GetConversionMember(map.To.TypeSymbolForConversion);
 
-				StoreMap(fromConversionMember, toConversionMember);
-			}
+                map.From.WillRequireConversion();
+                map.To.WillRequireConversion();
 
-			return;
-		}
+                StoreMap(fromConversionMember, toConversionMember);
+            }
 
-		private ITypeSymbol GetConversionTypeForGenerics(ConversionProperty conversionProperty)
-		{
-			if (conversionProperty.PropertySymbol.Type is not INamedTypeSymbol namedTypeSymbol)
-			{
-				return conversionProperty.TypeSymbolForConversion;
-			}
+            return;
+        }
 
-			if (namedTypeSymbol.TypeArguments == null || namedTypeSymbol.TypeArguments.Length <= 0)
-			{
-				return conversionProperty.TypeSymbolForConversion; // No generics
-			}
+        private ITypeSymbol GetConversionTypeForGenerics(ConversionProperty conversionProperty)
+        {
+            if (conversionProperty.PropertySymbol.Type is not INamedTypeSymbol namedTypeSymbol)
+            {
+                return conversionProperty.TypeSymbolForConversion;
+            }
 
-			var typeArgument = namedTypeSymbol.TypeArguments.Last(); // For multiple generics use last
+            if (namedTypeSymbol.TypeArguments == null || namedTypeSymbol.TypeArguments.Length <= 0)
+            {
+                return conversionProperty.TypeSymbolForConversion; // No generics
+            }
 
-			if (IsNotConvertible(typeArgument))
-			{
-				return null;
-			}
+            var typeArgument = namedTypeSymbol.TypeArguments.Last(); // For multiple generics use last
 
-			return typeArgument;
-		}
+            if (IsNotConvertible(typeArgument))
+            {
+                return null;
+            }
 
-		private void CheckForOrphans(ConversionMember from, ConversionMember to)
-		{
-			var orphans = from.Properties
-				.GroupJoin(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new { From = f, To = t })
-				.Where(ft => ft.To?.Any() != true)
-				.ToList();
+            return typeArgument;
+        }
 
-			if (orphans.Count <= 0)
-			{
-				return;
-			}
+        private void CheckForOrphans(ConversionMember from, ConversionMember to)
+        {
+            var orphans = to.Properties
+                .Where(t => t.IgnoredForConverionToTypes.Contains(from.FullName) == false)
+                .GroupJoin(from.Properties, t => GetPropertyName(t), f => GetPropertyName(f), (t, f) => new { To = t, From = f })
+                .Where(ft => ft.From?.Any() != true)
+                .ToList();
 
-			// I want to show real name, so no GetPropertyName here!
-			string unamppedMembersHumanReadable = string.Join(", ", orphans.Select(o => o.From.PropertySymbol.Name));
+            if (orphans.Count <= 0)
+            {
+                return;
+            }
 
-			throw new UnableToBuildMapException($"Unable to map '{from.FullName}' to '{to.FullName}'! There is no definition for these properties '{unamppedMembersHumanReadable}' from '{from.FullName}'!");
-		}
+            // I want to show real name, so no GetPropertyName here!
+            string unamppedMembersHumanReadable = string.Join(", ", orphans.Select(o => o.To.PropertySymbol.Name));
 
-		private string GetPropertyName(ConversionProperty conversionProperty)
-		{
-			// TODO: Some day i'll have to consider different names by some attribute here
-			return conversionProperty.PropertySymbol.Name;
-		}
+            throw new UnableToBuildMapException($"Unable to map '{from.FullName}' to '{to.FullName}'! There is no definition for these properties '{unamppedMembersHumanReadable}' from '{from.FullName}'!");
+        }
 
-		private bool HasTypeThatHasProperties(ConversionProperty conversionProperty)
-		{
-			if (IsNotConvertible(conversionProperty.TypeSymbolForConversion))
-			{
-				return false;
-			}
+        private string GetPropertyName(ConversionProperty conversionProperty)
+        {
+            // TODO: Some day i'll have to consider different names by some attribute here
+            return conversionProperty.PropertySymbol.Name;
+        }
 
-			var members = conversionProperty.TypeSymbolForConversion.GetMembers();
+        private bool HasTypeThatHasProperties(ConversionProperty conversionProperty)
+        {
+            if (IsNotConvertible(conversionProperty.TypeSymbolForConversion))
+            {
+                return false;
+            }
 
-			return _semanticAnalysisService
-				.GetPropertySymbols(members)
-				.Any();
-		}
+            var members = conversionProperty.TypeSymbolForConversion.GetMembers();
 
-		private bool IsNotConvertible(ITypeSymbol typeSymbol)
-		{
-			// "False" means the we will have some primitive type in hands or something
-			return typeSymbol.SpecialType != SpecialType.None;
-		}
+            return _semanticAnalysisService
+                .GetPropertySymbols(members)
+                .Any();
+        }
 
-		private string GetTypeFullName(TypeSyntax typeSyntax)
-		{
-			var ns = _semanticAnalysisService.GetNamespace(typeSyntax);
-			var name = typeSyntax.ToString();
+        private bool IsNotConvertible(ITypeSymbol typeSymbol)
+        {
+            // "False" means the we will have some primitive type in hands or something
+            return typeSymbol.SpecialType != SpecialType.None;
+        }
 
-			return ns + '.' + name;
-		}
+        private string GetTypeFullName(TypeSyntax typeSyntax)
+        {
+            var ns = _semanticAnalysisService.GetNamespace(typeSyntax);
+            var name = typeSyntax.ToString();
 
-		private ConversionMember GetConversionMember(TypeSyntax typeSyntax)
-		{
-			string fullName = GetTypeFullName(typeSyntax);
+            return ns + '.' + name;
+        }
 
-			var properties = _semanticAnalysisService.GetPropertySymbols(typeSyntax);
-			var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
+        private ConversionMember GetConversionMember(TypeSyntax typeSyntax)
+        {
+            string fullName = GetTypeFullName(typeSyntax);
 
-			return new ConversionMember(fullName, properties, namespaces);
-		}
+            var properties = _semanticAnalysisService.GetPropertySymbols(typeSyntax);
+            var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
+            //var a = properties.Last().GetAttributes().First().ApplicationSyntaxReference.GetSyntax().DescendantNodes().OfType<GenericNameSyntax>().First();
 
-		private ConversionMember GetConversionMember(ITypeSymbol typeSymbol)
-		{
-			string fullName = typeSymbol.ToString();
-			var members = typeSymbol.GetMembers();
+            return GetConversionMember(fullName, properties, namespaces);
+        }
 
-			var properties = _semanticAnalysisService.GetPropertySymbols(members);
-			var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSymbol);
+        private ConversionMember GetConversionMember(ITypeSymbol typeSymbol)
+        {
+            string fullName = typeSymbol.ToString();
+            var members = typeSymbol.GetMembers();
 
-			return new ConversionMember(fullName, properties, namespaces);
-		}
+            var properties = _semanticAnalysisService.GetPropertySymbols(members);
+            var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSymbol);
 
-		private sealed record ConversionTupple
-		{
-			public ConversionProperty From { get; }
+            return GetConversionMember(fullName, properties, namespaces);
+        }
 
-			public ConversionProperty To { get; }
+        private ConversionMember GetConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces)
+        {
+            var member = new ConversionMember(fullName, properties, namespaces);
 
-			public ConversionTupple(ConversionProperty from, ConversionProperty to)
-			{
-				From = from;
-				To = to;
-			}
-		}
-	}
+            foreach (var property in member.Properties)
+            {
+                var ignoredForTypes = _autoconverterPropertyIgnoreService.IgnoredForTypes(property.PropertySymbol);
+                property.IgnoreForConverionToTypes(ignoredForTypes.ToArray());
+            }
+
+            return member;
+        }
+
+        private sealed record ConversionTupple
+        {
+            public ConversionProperty From { get; }
+
+            public ConversionProperty To { get; }
+
+            public ConversionTupple(ConversionProperty from, ConversionProperty to)
+            {
+                From = from;
+                To = to;
+            }
+        }
+    }
 }

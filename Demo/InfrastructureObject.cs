@@ -1,11 +1,13 @@
-﻿using Paukertj.Autoconverter.Primitives.Services.Converter;
+﻿using Paukertj.Autoconverter.Primitives.Attributes;
 
 namespace Paukertj.Autoconverter.Demo
 {
 	public sealed record InfrastructureObject
 	{
-		//public string FirstName { get; set; }
-		//public string LastName { get; set; }
+		public string FirstName { get; set; }
+
+		[AutoconverterPropertyIgnore(typeof(DomainObject))]
+        public string LastName2 { get; set; }
 	}
 
 	//public class InfrastructureObjectToDomainObject : IConverter<InfrastructureObject, DomainObject>

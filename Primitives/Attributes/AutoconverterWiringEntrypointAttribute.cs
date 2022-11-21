@@ -2,7 +2,7 @@
 
 namespace Paukertj.Autoconverter.Primitives.Attributes
 {
-	public class AutoconverterWiringEntrypointAttribute : Attribute
+	public sealed class AutoconverterWiringEntrypointAttribute : Attribute
 	{
 	}
 }

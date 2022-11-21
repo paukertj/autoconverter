@@ -1,18 +1,30 @@
 ﻿using Microsoft.CodeAnalysis;
+using Paukertj.Autoconverter.Generator.Exceptions;
 using System;
 
 namespace Paukertj.Autoconverter.Generator.Extensions
 {
 	internal static class GeneratorExecutionContextExtensions
 	{
-		internal static void ReportDiagnostic<TException>(this GeneratorExecutionContext context, TException exception)
-			where TException : Exception
+		internal static void ReportDiagnostic(this GeneratorExecutionContext context, AutmappingExceptionBase exception)
 		{
-			var description = exception.GetDiagnosticDescriptor();
+            exception
+                .GetDiagnosticDescriptor()
+                .ReportDiagnostic(context);
+        }
 
-			var diagnostic = Diagnostic.Create(description, null);
+        internal static void ReportDiagnostic(this GeneratorExecutionContext context, Exception exception)
+        {
+			exception
+				.GetDiagnosticDescriptor()
+				.ReportDiagnostic(context);
+        }
 
-			context.ReportDiagnostic(diagnostic);
-		}
+		private static void ReportDiagnostic(this DiagnosticDescriptor diagnosticDescriptor, GeneratorExecutionContext context)
+		{
+            var diagnostic = Diagnostic.Create(diagnosticDescriptor, null);
+
+            context.ReportDiagnostic(diagnostic);
+        }
 	}
 }

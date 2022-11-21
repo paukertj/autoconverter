@@ -225,7 +225,8 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 		private ReturnStatementSyntax GetConversion(ConversionInfo conversionInfo)
 		{
 			var properties = conversionInfo.From.Properties
-				.Join(conversionInfo.To.Properties, from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to))
+                .Join(conversionInfo.To.Properties
+                    .Where(t => t.IgnoredForConverionToTypes.Contains(conversionInfo.From.FullName) == false), from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to))
 				.ToList();
 
 			int size = properties.Count * 2 - 1;
