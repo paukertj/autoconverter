@@ -12,6 +12,8 @@
 	<Description>Code Generator for automapping</Description>
 	<RepositoryUrl>https://github.com/paukertj/autoconverter</RepositoryUrl>
 	<NoPackageAnalysis>True</NoPackageAnalysis>
+	<GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+	<TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,7 +37,7 @@
   </ItemGroup>
 	
   <ItemGroup>
-    <None Include="..\Primitives\bin\$(Configuration)\netstandard2.0\Paukertj.Autoconverter.Primitives.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="true" />
+    <None Include="..\Primitives\bin\$(Configuration)\netstandard2.0\Paukertj.Autoconverter.Primitives.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 	
   <ItemGroup>
@@ -43,13 +45,15 @@
 	<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-  </PropertyGroup>
-
   <Target Name="GetDependencyTargetPaths">
     <ItemGroup>
       <TargetPathWithTargetPlatformMoniker Include="..\Primitives\bin\$(Configuration)\netstandard2.0\Paukertj.Autoconverter.Primitives.dll" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+  </Target>
+	
+  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
     </ItemGroup>
   </Target>
 </Project>
