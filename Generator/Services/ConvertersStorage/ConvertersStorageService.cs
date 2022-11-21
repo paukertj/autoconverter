@@ -68,6 +68,8 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
 		private void ValidateForClassReferencesAndStore(ConversionMember from, ConversionMember to)
 		{
+			CheckForOrphans(from, to);
+
 			var fromPropertiesWithOfSomethingComplex = from.Properties
 				.Where(HasTypeThatHasProperties)
 				.ToList();
@@ -78,8 +80,6 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 			}
 
 			// So fromPropertiesWithOfSomethingComplex now contains list of properties with type, that need a new map
-
-			CheckForOrphans(from, to);
 
 			var conversions = fromPropertiesWithOfSomethingComplex
 				.Join(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new ConversionTupple(f, t))

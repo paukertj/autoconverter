@@ -2,9 +2,10 @@
 {
 	internal enum ExceptionTypes
 	{
-		UnableToBuildMap = 1,
-		ThereIsNoEntryPoint = 2,
-		ThereAreMoreThanOneEntryPoint = 3,
-		InvalidEntryPoint = 4
+		Unhandled = 1,
+		UnableToBuildMap = 2,
+		ThereIsNoEntryPoint = 3,
+		ThereAreMoreThanOneEntryPoint = 4,
+		InvalidEntryPoint = 5
 	}
 }

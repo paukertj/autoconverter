@@ -224,13 +224,6 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 
 		private ReturnStatementSyntax GetConversion(ConversionInfo conversionInfo)
 		{
-			if (conversionInfo.From.Properties.Count != conversionInfo.To.Properties.Count)
-			{
-				throw new Exception($"Unable to process conversion '{conversionInfo.Id}' because there is different count of properties on both sides!");
-			}
-
-			// TODO: Check names
-
 			var properties = conversionInfo.From.Properties
 				.Join(conversionInfo.To.Properties, from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to))
 				.ToList();
