@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Paukertj.Autoconverter.Primitives.Attributes;
-using Paukertj.Autoconverter.Primitives.Services.Converting;
+using Paukertj.Autoconverter.Primitives.Extensions;
 
 namespace Paukertj.Autoconverter.Demo
 {
@@ -8,13 +8,13 @@ namespace Paukertj.Autoconverter.Demo
 	{
 		public static IServiceCollection AddAutomapping(this IServiceCollection serviceCollection)
 		{
-			serviceCollection.AddSingleton<IConvertingService, ConvertingService>();
+			serviceCollection.AddAutoconverter();
 			serviceCollection.AddAutomappingInternal();
 
 			return serviceCollection;
 		}
 
-		[AutomappingWiringEntrypoint]
+		[AutoconverterWiringEntrypoint]
 		static partial void AddAutomappingInternal(this IServiceCollection serviceCollection);
 	}
 }

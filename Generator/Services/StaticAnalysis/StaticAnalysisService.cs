@@ -5,6 +5,7 @@ using Paukertj.Autoconverter.Generator.Exceptions;
 using Paukertj.Autoconverter.Primitives.Services.Converter;
 using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 
 namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 {
@@ -60,11 +61,11 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 				throw new InvalidEntryPointException($"Can not get '{nameof(ClassDeclarationSyntax)}' from declared entry point!");
 			}
 
-			var entryPointNamespace = entryPointClass.GetFirstParentNode<NamespaceDeclarationSyntax>();
+			var entryPointNamespace = GetNamespace(entryPointClass);
 
 			if (entryPointNamespace == null)
 			{
-				throw new InvalidEntryPointException($"Can not get '{nameof(NamespaceDeclarationSyntax)}' from declared entry point!");
+				throw new InvalidEntryPointException($"Can not get '{nameof(NamespaceDeclarationSyntax)}' or '{nameof(FileScopedNamespaceDeclarationSyntax)}' from declared entry point!");
 			}
 
 			_entryPointInfo = new EntryPointInfo(
@@ -101,6 +102,30 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 			_converterServiceInfo = new ConverterServiceInfo(nameof(IConverter<object, object>), typeof(IConverter<object, object>).Namespace);
 
 			return _converterServiceInfo;
+		}
+
+		private BaseNamespaceDeclarationSyntax GetNamespace(SyntaxNode entrySyntaxNode)
+		{
+			if (entrySyntaxNode == null)
+			{
+				return null;
+			}
+
+			var namespaceDeclarationSyntax = entrySyntaxNode.GetFirstParentNode<NamespaceDeclarationSyntax>();
+
+			if (namespaceDeclarationSyntax != null)
+			{
+				return namespaceDeclarationSyntax;
+			}
+
+			var fileScopedNamespaceDeclarationSyntax = entrySyntaxNode.GetFirstParentNode<FileScopedNamespaceDeclarationSyntax>();
+
+			if (fileScopedNamespaceDeclarationSyntax != null)
+			{
+				return fileScopedNamespaceDeclarationSyntax;
+			}
+
+			return null;
 		}
 	}
 }

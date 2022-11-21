@@ -9,6 +9,7 @@ using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
+using System.Diagnostics;
 
 namespace Paukertj.Autoconverter.Generator
 {
@@ -82,6 +83,7 @@ namespace Paukertj.Autoconverter.Generator
 		public void Initialize(GeneratorInitializationContext context)
 		{
 			//Debugger.Launch();
+
 			var proxyReceiver = new ProxyReceiver();
 
 			proxyReceiver.RegisterSubscription(new ConvertCallsSyntaxReceiver(_convertMethodCalls));
