@@ -9,123 +9,129 @@ using Microsoft.CodeAnalysis;
 
 namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 {
-	internal class StaticAnalysisService : IStaticAnalysisService
-	{
-		private EntryPointInfo _entryPointInfo;
-		private ConvertingServiceInfo _convertingServiceInfo;
-		private ConverterServiceInfo _converterServiceInfo;
+    internal class StaticAnalysisService : IStaticAnalysisService
+    {
+        private EntryPointInfo _entryPointInfo;
+        private ConvertingServiceInfo _convertingServiceInfo;
+        private ConverterServiceInfo _converterServiceInfo;
 
-		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
-		private readonly ISyntaxNodeStorageService<AttributeSyntax> _entryPointAttribtues;
+        private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
+        private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
 
-		public StaticAnalysisService(
-			ISyntaxNodeStorageService<GenericNameSyntax> convertMethodCalls,
-			ISyntaxNodeStorageService<AttributeSyntax> entryPointAttribtues)
-		{
-			_convertMethodCalls = convertMethodCalls;
-			_entryPointAttribtues = entryPointAttribtues;
-		}
+        public StaticAnalysisService(
+            ISyntaxNodeStorageService<GenericNameSyntax> convertMethodCalls,
+            ISyntaxNodeStorageService<AttributeSyntax> wiringEntrypointAttributes)
+        {
+            _convertMethodCalls = convertMethodCalls;
+            _wiringEntrypointAttributes = wiringEntrypointAttributes;
+        }
 
-		public EntryPointInfo GetEntryPointInfo()
-		{
-			if (_entryPointInfo != null)
-			{
-				return _entryPointInfo;
-			}
+        public EntryPointInfo GetEntryPointInfo()
+        {
+            if (_entryPointInfo != null)
+            {
+                return _entryPointInfo;
+            }
 
-			var entryPoints = _entryPointAttribtues.Get();
+            var entryPoints = _wiringEntrypointAttributes.Get();
 
-			if (entryPoints.Count <= 0)
-			{
-				throw new ThereIsNoEntryPointException("Unable to find entry point method!");
-			}
+            if (entryPoints.Count <= 0)
+            {
+                throw new ThereIsNoEntryPointException("Unable to find entry point method");
+            }
 
-			if (entryPoints.Count > 1)
-			{
-				throw new ThereAreMoreThanOneEntryPointException($"There are '{entryPoints.Count}' entry points but only one expected!");
-			}
+            if (entryPoints.Count > 1)
+            {
+                throw new ThereAreMoreThanOneEntryPointException($"There are '{entryPoints.Count}' entry points but only one expected");
+            }
 
-			var entryPoint = entryPoints.First();
+            var entryPoint = entryPoints.First();
 
-			var entryPointMethod = entryPoint.GetFirstParentNode<MethodDeclarationSyntax>();
+            var entryPointMethod = entryPoint.GetFirstParentNode<MethodDeclarationSyntax>();
 
-			if (entryPointMethod == null)
-			{
-				throw new InvalidEntryPointException($"Can not get '{nameof(MethodDeclarationSyntax)}' from declared entry point!");
-			}
+            if (entryPointMethod == null)
+            {
+                throw new InvalidEntryPointException($"Can not get '{nameof(MethodDeclarationSyntax)}' from declared entry point");
+            }
 
-			var entryPointClass = entryPoint.GetFirstParentNode<ClassDeclarationSyntax>();
+            var entryPointClass = GetClassOrRecord(entryPoint);
 
-			if (entryPointClass == null)
-			{
-				throw new InvalidEntryPointException($"Can not get '{nameof(ClassDeclarationSyntax)}' from declared entry point!");
-			}
+            if (entryPointClass == null)
+            {
+                throw new InvalidEntryPointException($"Can not get '{nameof(ClassDeclarationSyntax)}' or '{nameof(RecordDeclarationSyntax)}' from declared entry point");
+            }
 
-			var entryPointNamespace = GetNamespace(entryPointClass);
+            var entryPointNamespace = GetNamespace(entryPointClass);
 
-			if (entryPointNamespace == null)
-			{
-				throw new InvalidEntryPointException($"Can not get '{nameof(NamespaceDeclarationSyntax)}' or '{nameof(FileScopedNamespaceDeclarationSyntax)}' from declared entry point!");
-			}
+            if (entryPointNamespace == null)
+            {
+                throw new InvalidEntryPointException($"Can not get '{nameof(NamespaceDeclarationSyntax)}' or '{nameof(FileScopedNamespaceDeclarationSyntax)}' from declared entry point");
+            }
 
-			_entryPointInfo = new EntryPointInfo(
-				entryPointMethod.Identifier.ValueText
-					.Trim(),
-				entryPointClass.Identifier.ValueText
-					.Trim(),
-				entryPointNamespace.Name
-					.ToFullString()
-					.Trim());
+            _entryPointInfo = new EntryPointInfo(
+                entryPointMethod.Identifier.ValueText
+                    .Trim(),
+                entryPointClass.Identifier.ValueText
+                    .Trim(),
+                entryPointNamespace.Name
+                    .ToFullString()
+                    .Trim());
 
-			return _entryPointInfo;
-		}
+            return _entryPointInfo;
+        }
 
-		public ConvertingServiceInfo GetConvertingServiceInfo()
-		{
-			if (_convertingServiceInfo != null)
-			{
-				return _convertingServiceInfo;
-			}
+        public ConvertingServiceInfo GetConvertingServiceInfo()
+        {
+            if (_convertingServiceInfo != null)
+            {
+                return _convertingServiceInfo;
+            }
 
-			_convertingServiceInfo = new ConvertingServiceInfo(nameof(IConvertingService), typeof(IConvertingService).Namespace);
+            _convertingServiceInfo = new ConvertingServiceInfo(nameof(IConvertingService), typeof(IConvertingService).Namespace);
 
-			return _convertingServiceInfo;
-		}
+            return _convertingServiceInfo;
+        }
 
-		public ConverterServiceInfo GetConverterServiceInfo()
-		{
-			if (_converterServiceInfo != null)
-			{
-				return _converterServiceInfo;
-			}
+        public ConverterServiceInfo GetConverterServiceInfo()
+        {
+            if (_converterServiceInfo != null)
+            {
+                return _converterServiceInfo;
+            }
 
-			_converterServiceInfo = new ConverterServiceInfo(nameof(IConverter<object, object>), typeof(IConverter<object, object>).Namespace);
+            _converterServiceInfo = new ConverterServiceInfo(nameof(IConverter<object, object>), typeof(IConverter<object, object>).Namespace);
 
-			return _converterServiceInfo;
-		}
+            return _converterServiceInfo;
+        }
 
-		private BaseNamespaceDeclarationSyntax GetNamespace(SyntaxNode entrySyntaxNode)
-		{
-			if (entrySyntaxNode == null)
-			{
-				return null;
-			}
+        public TypeDeclarationSyntax GetClassOrRecord(SyntaxNode entrySyntaxNode)
+        {
+            return GetOneOfNodes<ClassDeclarationSyntax, RecordDeclarationSyntax, TypeDeclarationSyntax>(entrySyntaxNode);
+        }
 
-			var namespaceDeclarationSyntax = entrySyntaxNode.GetFirstParentNode<NamespaceDeclarationSyntax>();
+        public BaseNamespaceDeclarationSyntax GetNamespace(SyntaxNode entrySyntaxNode)
+        {
+            return GetOneOfNodes<NamespaceDeclarationSyntax, FileScopedNamespaceDeclarationSyntax, BaseNamespaceDeclarationSyntax>(entrySyntaxNode);
+        }
 
-			if (namespaceDeclarationSyntax != null)
-			{
-				return namespaceDeclarationSyntax;
-			}
+        private TBaseNode GetOneOfNodes<TNode1, TNode2, TBaseNode>(SyntaxNode entrySyntaxNode)
+            where TNode1 : SyntaxNode
+            where TNode2 : SyntaxNode
+            where TBaseNode : SyntaxNode
+        {
+            if (entrySyntaxNode == null)
+            {
+                return null;
+            }
 
-			var fileScopedNamespaceDeclarationSyntax = entrySyntaxNode.GetFirstParentNode<FileScopedNamespaceDeclarationSyntax>();
+            var syntaxNode = entrySyntaxNode.GetFirstParentNode<TNode1>();
 
-			if (fileScopedNamespaceDeclarationSyntax != null)
-			{
-				return fileScopedNamespaceDeclarationSyntax;
-			}
+            if (syntaxNode != null)
+            {
+                return syntaxNode as TBaseNode;
+            }
 
-			return null;
-		}
-	}
+            return entrySyntaxNode.GetFirstParentNode<TNode2>() as TBaseNode;
+        }
+    }
 }

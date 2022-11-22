@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using System.Collections.Generic;
 
 namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 {
@@ -10,16 +11,13 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
 		public bool RequireConversion { get; private set; }
 
+		public IReadOnlyList<string> IgnoredForConverionToTypes => _ignoredForConverionToTypes;
+        private List<string> _ignoredForConverionToTypes = new List<string>();
+
 		public ConversionProperty(IPropertySymbol propertySymbol)
 		{
 			PropertySymbol = propertySymbol;
 			TypeSymbolForConversion = propertySymbol.Type;
-		}
-
-		public ConversionProperty(IPropertySymbol propertySymbol, ITypeSymbol typeSymbolForConversion)
-		{
-			PropertySymbol = propertySymbol;
-			TypeSymbolForConversion = typeSymbolForConversion;
 		}
 
 		public void WillRequireConversion()
@@ -31,5 +29,10 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 		{
 			TypeSymbolForConversion = typeSymbolForConversion;
 		}
-	}
+
+		public void IgnoreForConverionToTypes(params string[] typeSymbolForConversion)
+		{
+			_ignoredForConverionToTypes.AddRange(typeSymbolForConversion);
+		}
+    }
 }

@@ -6,6 +6,7 @@ using Paukertj.Autoconverter.Generator.Generators.Converter;
 using Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowiring;
 using Paukertj.Autoconverter.Generator.Receivers;
 using Paukertj.Autoconverter.Generator.Receivers.Proxy;
+using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
@@ -19,18 +20,19 @@ namespace Paukertj.Autoconverter.Generator
 	internal class AutomappingGenerator : ISourceGenerator
 	{
 		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
-		private readonly ISyntaxNodeStorageService<AttributeSyntax> _entryPointAttribtues;
-		private readonly IStaticAnalysisService _staticAnalysisService;
+		private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
+        private readonly ISyntaxNodeStorageService<AttributeSyntax> _propertyIgnoreAttributes;
+        private readonly IStaticAnalysisService _staticAnalysisService;
 
 		public AutomappingGenerator()
 		{
 			_convertMethodCalls = new SyntaxNodeStorageService<GenericNameSyntax>();
-			_entryPointAttribtues = new SyntaxNodeStorageService<AttributeSyntax>();
+            _wiringEntrypointAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
+            _propertyIgnoreAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
+            _staticAnalysisService = new StaticAnalysisService(_convertMethodCalls, _wiringEntrypointAttributes);
+        }
 
-			_staticAnalysisService = new StaticAnalysisService(_convertMethodCalls, _entryPointAttribtues);
-		}
-
-		public void Execute(GeneratorExecutionContext context)
+        public void Execute(GeneratorExecutionContext context)
 		{
 			try
 			{
@@ -49,7 +51,8 @@ namespace Paukertj.Autoconverter.Generator
 		private void ExecuteInternal(GeneratorExecutionContext context)
 		{
 			var semanticAnalysisService = new SemanticAnalysisService(context);
-			var convertersStorageService = new ConvertersStorageService(semanticAnalysisService);
+            var autoconverterPropertyIgnoreService = new AutoconverterPropertyIgnoreService(_propertyIgnoreAttributes, _staticAnalysisService, semanticAnalysisService);
+            var convertersStorageService = new ConvertersStorageService(semanticAnalysisService, autoconverterPropertyIgnoreService);
 			var converterGenerator = new ConverterGenerator(
 				context,
 				convertersStorageService,
@@ -59,7 +62,8 @@ namespace Paukertj.Autoconverter.Generator
 				convertersStorageService,
 				_staticAnalysisService);
 
-			var convertingServiceInfo = _staticAnalysisService.GetConvertingServiceInfo();
+
+            var convertingServiceInfo = _staticAnalysisService.GetConvertingServiceInfo();
 
 			foreach (var convertMethodCall in _convertMethodCalls.Get())
 			{
@@ -82,9 +86,10 @@ namespace Paukertj.Autoconverter.Generator
 			var proxyReceiver = new ProxyReceiver();
 
 			proxyReceiver.RegisterSubscription(new ConvertCallsSyntaxReceiver(_convertMethodCalls));
-			proxyReceiver.RegisterSubscription(new AutomappingWiringEntrypointSyntaxReceiver(_entryPointAttribtues));
+			proxyReceiver.RegisterSubscription(new AutoconverterWiringEntrypointSyntaxReceiver(_wiringEntrypointAttributes));
+            proxyReceiver.RegisterSubscription(new AutoconverterPropertyIgnoreReceiver(_propertyIgnoreAttributes));
 
-			context.RegisterForSyntaxNotifications(() => proxyReceiver);
+            context.RegisterForSyntaxNotifications(() => proxyReceiver);
 		}
 	}
 }
