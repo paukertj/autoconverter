@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
 using System.Xml.Linq;
+using System;
 
 namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 {
@@ -17,7 +18,6 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
         private readonly Dictionary<string, ConversionInfo> _conversionsStore = new Dictionary<string, ConversionInfo>();
         private readonly HashSet<string> _conversionsForm = new HashSet<string>();
         private readonly IAutoconverterPropertyIgnoreService _autoconverterPropertyIgnoreService;
-
 
         public ConvertersStorageService(ISemanticAnalysisService semanticAnalysisService, IAutoconverterPropertyIgnoreService autoconverterPropertyIgnoreService)
         {
@@ -48,8 +48,8 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
         private void StoreMap(TypeSyntax fromTypeSyntax, TypeSyntax toTypeSyntax)
         {
-            var from = GetConversionMember(fromTypeSyntax);
-            var to = GetConversionMember(toTypeSyntax);
+            var from = GetConversionMember(fromTypeSyntax, _semanticAnalysisService.GetPropertySymbolsWithPublicGetter);
+            var to = GetConversionMember(toTypeSyntax, _semanticAnalysisService.GetPropertySymbolsWithPublicSetter);
 
             StoreMap(from, to);
         }
@@ -158,19 +158,31 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
         private void CheckForOrphans(ConversionMember from, ConversionMember to)
         {
-            var orphans = to.Properties
+            var mappedSources = from.Properties
+                .Join(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new { From = f, To = t })
+                .ToList();
+
+            if (mappedSources.Count == from.Properties.Count)
+            {
+                // I can map all source properties
+                return;
+            }
+
+            var targetOrphans = to.Properties
                 .Where(t => t.IgnoredForConverionToTypes.Contains(from.FullName) == false)
                 .GroupJoin(from.Properties, t => GetPropertyName(t), f => GetPropertyName(f), (t, f) => new { To = t, From = f })
                 .Where(ft => ft.From?.Any() != true)
                 .ToList();
 
-            if (orphans.Count <= 0)
+            if (targetOrphans.Count <= 0)
             {
+                // I can map all target members (should never happen because condition above)
                 return;
             }
 
+
             // I want to show real name, so no GetPropertyName here!
-            string unamppedMembersHumanReadable = string.Join(", ", orphans.Select(o => o.To.PropertySymbol.Name));
+            string unamppedMembersHumanReadable = string.Join(", ", targetOrphans.Select(o => o.To.PropertySymbol.Name));
 
             throw new UnableToBuildMapException($"Unable to map '{from.FullName}' to '{to.FullName}'! There is no definition for these properties '{unamppedMembersHumanReadable}' from '{from.FullName}'!");
         }
@@ -209,13 +221,12 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
             return ns + '.' + name;
         }
 
-        private ConversionMember GetConversionMember(TypeSyntax typeSyntax)
+        private ConversionMember GetConversionMember(TypeSyntax typeSyntax, Func<TypeSyntax, IReadOnlyList<IPropertySymbol>> filter)
         {
             string fullName = GetTypeFullName(typeSyntax);
 
-            var properties = _semanticAnalysisService.GetPropertySymbols(typeSyntax);
-            var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
-            //var a = properties.Last().GetAttributes().First().ApplicationSyntaxReference.GetSyntax().DescendantNodes().OfType<GenericNameSyntax>().First();
+            var properties = filter(typeSyntax);
+			var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
 
             return GetConversionMember(fullName, properties, namespaces);
         }
