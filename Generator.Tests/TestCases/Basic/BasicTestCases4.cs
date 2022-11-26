@@ -5,7 +5,8 @@ using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composi
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
 	[TestFixture]
-	public class BasicTestCases4 : TestCasesBase<IBasicTestCasesService4, BasicTestCasesComposition4>
+    [Description("Basic access modifiers tests")]
+    public class BasicTestCases4 : TestCasesBase<IBasicTestCasesService4, BasicTestCasesComposition4>
 	{
 		public BasicTestCases4() : base(@".\TestCases\Basic\BasicTestCasesComposition4.cs")
 		{ }

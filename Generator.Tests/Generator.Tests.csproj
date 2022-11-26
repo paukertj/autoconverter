@@ -39,9 +39,6 @@
     <Compile Update="TestCases\Basic\BasicTestCasesComposition5.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="TestCases\Basic\BasicTestCasesComposition6.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="TestCases\TestCasesCompositionBase.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>

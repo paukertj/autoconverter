@@ -4,6 +4,8 @@ using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composi
 
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
+    [TestFixture]
+    [Description("Basic tests for file scoped namespaces")]
     public class BasicTestCases5 : TestCasesBase<IBasicTestCasesService5, BasicTestCasesComposition5>
     {
         public BasicTestCases5() : base(@".\TestCases\Basic\BasicTestCasesComposition5.cs")

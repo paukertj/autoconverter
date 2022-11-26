@@ -1,17 +1,11 @@
 ﻿using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition1;
-using Paukertj.Autoconverter.Generator.Tests.Helpers.Compiling;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
-	[TestFixture]
+    [TestFixture]
+    [Description("Basic mapping tests")]
 	public class BasicTestCases1 : TestCasesBase<IBasicTestCasesService1, BasicTestCasesComposition1>
 	{
 		public BasicTestCases1() : base(@".\TestCases\Basic\BasicTestCasesComposition1.cs")

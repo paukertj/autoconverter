@@ -5,7 +5,8 @@ using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composi
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
 	[TestFixture]
-	public class BasicTestCases3 : TestCasesBase<IBasicTestCasesService3, BasicTestCasesComposition3>
+    [Description("Basic tests for object nesting")]
+    public class BasicTestCases3 : TestCasesBase<IBasicTestCasesService3, BasicTestCasesComposition3>
 	{
 		public BasicTestCases3() : base(@".\TestCases\Basic\BasicTestCasesComposition3.cs")
 		{ }
