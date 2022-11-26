@@ -5,7 +5,8 @@ using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composi
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
 	[TestFixture]
-	public class BasicTestCases2 : TestCasesBase<IBasicTestCasesService2, BasicTestCasesComposition2>
+    [Description("Basic tests with different targets and sources")]
+    public class BasicTestCases2 : TestCasesBase<IBasicTestCasesService2, BasicTestCasesComposition2>
 	{
 		public BasicTestCases2() : base(@".\TestCases\Basic\BasicTestCasesComposition2.cs")
 		{ }
@@ -42,5 +43,54 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 				.Should()
 				.Be(basicToEntity.String);
 		}
-	}
+
+        [Test]
+        public void BasicTestCasesComposition2Scenario2()
+        {
+            Diagnostic
+                .Should()
+                .BeEmpty();
+
+            var service = GetTestCaseService();
+
+            var basicFromEntity = service.GetSourceScenario2();
+
+            var basicToEntity = service.ConvertScenario2();
+
+            basicToEntity.FirstName
+                .Should()
+                .Be(basicFromEntity.FirstName);
+            basicToEntity.LastName
+                .Should()
+                .Be(basicFromEntity.LastName);
+
+            basicToEntity.Id
+                .Should()
+                .BeEmpty();
+        }
+
+        [Test]
+        public void BasicTestCasesComposition2Scenario3()
+        {
+            Diagnostic
+                .Should()
+                .BeEmpty();
+
+            var service = GetTestCaseService();
+
+            var basicFromEntity = service.GetSourceScenario3();
+
+            var basicToEntity = service.ConvertScenario3();
+
+            basicToEntity.FirstName
+                .Should()
+                .Be(basicFromEntity.FirstName);
+            basicToEntity.LastName
+                .Should()
+                .Be(basicFromEntity.LastName);
+            basicToEntity.Id
+                .Should()
+                .Be(basicFromEntity.Id);
+        }
+    }
 }

@@ -1,4 +1,6 @@
-﻿namespace Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition1
+﻿using System;
+
+namespace Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition1
 {
     public class BasicFromEntity2Scenario1
     {
@@ -19,5 +21,23 @@
         public string String { get; set; }
 
         public char Char { get; set; }
+    }
+
+    public class BasicFromEntity2Scenario2
+    {
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+    }
+
+    public class BasicFromEntity2Scenario3
+    {
+        public Guid Id { get; set; }
+
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+        public string Company { get; set; }
     }
 }
