@@ -108,6 +108,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 			allUsings.AddRange(conversionInfo.To.Namespaces);
 			allUsings.Add(converterServiceInfo.NamespaceName);
 			allUsings.Add(convertingServiceInfo.NamespaceName);
+			allUsings.Add(typeof(ArgumentNullException).Namespace);
 
 			allUsings = allUsings
 				.Distinct()
@@ -181,45 +182,24 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 		private IfStatementSyntax GetNullCheck()
 		{
 			return IfStatement(
-					BinaryExpression(
-						SyntaxKind.EqualsExpression,
-						IdentifierName(
-							Identifier(
-								TriviaList(),
-								SyntaxKind.FromKeyword,
-								FromParameter,
-								FromParameter,
-								TriviaList())),
-						LiteralExpression(
-							SyntaxKind.NullLiteralExpression)),
-					Block(
-						SingletonList<StatementSyntax>(
-							ThrowStatement(
-								ObjectCreationExpression(
-									IdentifierName("ArgumentNullException"))
-								.WithArgumentList(
-									ArgumentList(
-										SingletonSeparatedList(
-											Argument(
-												InvocationExpression(
-													IdentifierName(
-														Identifier(
-															TriviaList(),
-															SyntaxKind.NameOfKeyword,
-															"nameof",
-															"nameof",
-															TriviaList())))
-												.WithArgumentList(
-													ArgumentList(
-														SingletonSeparatedList(
-															Argument(
-																IdentifierName(
-																	Identifier(
-																		TriviaList(),
-																		SyntaxKind.FromKeyword,
-																		FromParameter,
-																		FromParameter,
-																		TriviaList()))))))))))))));
+				BinaryExpression(
+					SyntaxKind.EqualsExpression,
+					IdentifierName(
+						Identifier(
+							TriviaList(),
+							SyntaxKind.FromKeyword,
+							FromParameter,
+							FromParameter,
+							TriviaList())),
+					LiteralExpression(
+						SyntaxKind.DefaultLiteralExpression,
+						Token(SyntaxKind.DefaultKeyword))),
+				Block(
+					SingletonList<StatementSyntax>(
+						ReturnStatement(
+							LiteralExpression(
+								SyntaxKind.DefaultLiteralExpression,
+								Token(SyntaxKind.DefaultKeyword))))));
 		}
 
 		private ReturnStatementSyntax GetConversion(ConversionInfo conversionInfo)

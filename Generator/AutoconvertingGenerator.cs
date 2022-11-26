@@ -17,14 +17,14 @@ using System.Diagnostics;
 namespace Paukertj.Autoconverter.Generator
 {
 	[Generator]
-	internal class AutomappingGenerator : ISourceGenerator
+	internal class AutoconvertingGenerator : ISourceGenerator
 	{
 		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
 		private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
         private readonly ISyntaxNodeStorageService<AttributeSyntax> _propertyIgnoreAttributes;
         private readonly IStaticAnalysisService _staticAnalysisService;
 
-		public AutomappingGenerator()
+		public AutoconvertingGenerator()
 		{
 			_convertMethodCalls = new SyntaxNodeStorageService<GenericNameSyntax>();
             _wiringEntrypointAttributes = new SyntaxNodeStorageService<AttributeSyntax>();

@@ -19,8 +19,12 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 
 		IReadOnlyList<IPropertySymbol> GetPropertySymbols(TypeSyntax typeSyntax);
 
+		IReadOnlyList<IPropertySymbol> GetPropertySymbolsWithPublicSetter(TypeSyntax typeSyntax);
+
+		IReadOnlyList<IPropertySymbol> GetPropertySymbolsWithPublicGetter(TypeSyntax typeSyntax);
+
 		IReadOnlyList<IPropertySymbol> GetPropertySymbols(TypeInfo typeInfo);
 
-		IReadOnlyList<IPropertySymbol> GetPropertySymbols(ImmutableArray<ISymbol>? symbols);
+		IReadOnlyList<IPropertySymbol> GetPropertySymbols(IReadOnlyList<ISymbol> symbols);
 	}
 }
