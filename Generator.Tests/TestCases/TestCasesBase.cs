@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Paukertj.Autoconverter.Generator.Tests.Extensions;
 using Paukertj.Autoconverter.Generator.Tests.Helpers.Compiling;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases
 {
@@ -17,8 +18,10 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases
 
 		public TestCasesBase(params string[] files)
 		{
-			_files.AddRange(files);
-			_files.Add(@".\TestCases\TestCasesCompositionBase.cs");
+			var paths = files.Select(f => f.ToPath());
+
+			_files.AddRange(paths);
+			_files.Add(@".\TestCases\TestCasesCompositionBase.cs".ToPath());
 		}
 
 		[SetUp]
