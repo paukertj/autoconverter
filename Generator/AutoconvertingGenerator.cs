@@ -11,6 +11,8 @@ using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
+using Paukertj.Autoconverter.Primitives.Services.Converter;
+using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System;
 using System.Diagnostics;
 
@@ -22,6 +24,7 @@ namespace Paukertj.Autoconverter.Generator
 		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
 		private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
         private readonly ISyntaxNodeStorageService<AttributeSyntax> _propertyIgnoreAttributes;
+		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _converterImplementations;
         private readonly IStaticAnalysisService _staticAnalysisService;
 
 		public AutoconvertingGenerator()
@@ -29,6 +32,7 @@ namespace Paukertj.Autoconverter.Generator
 			_convertMethodCalls = new SyntaxNodeStorageService<GenericNameSyntax>();
             _wiringEntrypointAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
             _propertyIgnoreAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
+            _converterImplementations = new SyntaxNodeStorageService<GenericNameSyntax>();
             _staticAnalysisService = new StaticAnalysisService(_convertMethodCalls, _wiringEntrypointAttributes);
         }
 
@@ -52,7 +56,7 @@ namespace Paukertj.Autoconverter.Generator
 		{
 			var semanticAnalysisService = new SemanticAnalysisService(context);
             var autoconverterPropertyIgnoreService = new AutoconverterPropertyIgnoreService(_propertyIgnoreAttributes, _staticAnalysisService, semanticAnalysisService);
-            var convertersStorageService = new ConvertersStorageService(semanticAnalysisService, autoconverterPropertyIgnoreService);
+            var convertersStorageService = new ConvertersStorageService(semanticAnalysisService, _staticAnalysisService, autoconverterPropertyIgnoreService);
 			var converterGenerator = new ConverterGenerator(
 				context,
 				convertersStorageService,
@@ -62,17 +66,26 @@ namespace Paukertj.Autoconverter.Generator
 				convertersStorageService,
 				_staticAnalysisService);
 
+			// First process manually created converters
+            foreach (var convertImplementation in _converterImplementations.Get())
+            {
+                if (semanticAnalysisService.MemberOf<IConverter<object, object>>(convertImplementation) == false)
+                {
+                    continue;
+                }
 
-            var convertingServiceInfo = _staticAnalysisService.GetConvertingServiceInfo();
+                convertersStorageService.StoreExistingConverter(convertImplementation);
+            }
 
-			foreach (var convertMethodCall in _convertMethodCalls.Get())
+            // Then process conversions that needs to be generated
+            foreach (var convertMethodCall in _convertMethodCalls.Get())
 			{
-				if (semanticAnalysisService.MethodOf(convertMethodCall, convertingServiceInfo.InterfaceName) == false) // TODO: Consider namespace here
+				if (semanticAnalysisService.MemberOf<IConvertingService>(convertMethodCall) == false)
 				{
 					continue;
 				}
 
-				convertersStorageService.StoreConverter(convertMethodCall);
+				convertersStorageService.StoreGeneratedConverter(convertMethodCall);
 			}
 
 			converterGenerator.AddGenerators();
@@ -88,6 +101,7 @@ namespace Paukertj.Autoconverter.Generator
 			proxyReceiver.RegisterSubscription(new ConvertCallsSyntaxReceiver(_convertMethodCalls));
 			proxyReceiver.RegisterSubscription(new AutoconverterWiringEntrypointSyntaxReceiver(_wiringEntrypointAttributes));
             proxyReceiver.RegisterSubscription(new AutoconverterPropertyIgnoreReceiver(_propertyIgnoreAttributes));
+            proxyReceiver.RegisterSubscription(new ConvertImplementationsSyntaxReceiver(_converterImplementations));
 
             context.RegisterForSyntaxNotifications(() => proxyReceiver);
 		}

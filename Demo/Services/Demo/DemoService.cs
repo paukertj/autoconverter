@@ -39,9 +39,12 @@ namespace Paukertj.Autoconverter.Demo.Services.Demo
 				LastName = "Paukert"
 			};
 
-			//var infrastructureObjectWithNesting = _convertingService.Convert<DomainObjectWithNesting, InfrastructureObjectWithNesting>(domainObjectWithNesting);
+			var infrastructureObjectWithNesting = _convertingService.Convert<DomainObjectWithNesting, InfrastructureObjectWithNesting>(domainObjectWithNesting);
 
 			var infrastructureObject = _convertingService.Convert<DomainObject, InfrastructureObject>(someDomainObject);
-		}
+
+			var blah = _convertingService.Convert<InfrastructureObject, DomainObject>(infrastructureObject);
+
+        }
 	}
 }

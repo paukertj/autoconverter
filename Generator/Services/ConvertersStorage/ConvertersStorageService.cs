@@ -9,29 +9,37 @@ using System.Linq;
 using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
 using System.Xml.Linq;
 using System;
+using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
+using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 
 namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 {
     internal class ConvertersStorageService : IConvertersStorageService
     {
         private readonly ISemanticAnalysisService _semanticAnalysisService;
-        private readonly Dictionary<string, ConversionInfo> _conversionsStore = new Dictionary<string, ConversionInfo>();
-        private readonly HashSet<string> _conversionsForm = new HashSet<string>();
+        private readonly IStaticAnalysisService _staticAnalysisService;
+        private readonly Dictionary<string, ConversionInfoBase> _conversionsStore = new Dictionary<string, ConversionInfoBase>();
         private readonly IAutoconverterPropertyIgnoreService _autoconverterPropertyIgnoreService;
 
-        public ConvertersStorageService(ISemanticAnalysisService semanticAnalysisService, IAutoconverterPropertyIgnoreService autoconverterPropertyIgnoreService)
+        public ConvertersStorageService(
+            ISemanticAnalysisService semanticAnalysisService, 
+            IStaticAnalysisService staticAnalysisService,
+            IAutoconverterPropertyIgnoreService autoconverterPropertyIgnoreService)
         {
             _semanticAnalysisService = semanticAnalysisService;
+            _staticAnalysisService = staticAnalysisService;
             _autoconverterPropertyIgnoreService = autoconverterPropertyIgnoreService;
         }
 
-        public IReadOnlyList<ConversionInfo> GetConverters()
+        public IReadOnlyList<TConverter> GetConverters<TConverter>()
+            where TConverter : ConversionInfoBase
         {
             return _conversionsStore.Values
+                .OfType<TConverter>()
                 .ToList();
         }
 
-        public void StoreConverter(GenericNameSyntax genericNameSyntax)
+        public void StoreGeneratedConverter(GenericNameSyntax genericNameSyntax)
         {
             var genericsArguments = genericNameSyntax
                 .DescendantNodes()
@@ -46,6 +54,33 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
             StoreMap(genericsArguments.Value.First(), genericsArguments.Value.Last());
         }
 
+        public void StoreExistingConverter(GenericNameSyntax genericNameSyntax)
+        {
+            var genericsArguments = genericNameSyntax
+                .DescendantNodes()
+                .OfType<TypeArgumentListSyntax>()
+                .FirstOrDefault()?.Arguments;
+
+            if (genericsArguments == null || genericsArguments.Value.Count != 2)
+            {
+                return;
+            }
+
+            var from = GetTypeFullName(genericsArguments.Value.First());
+            var to = GetTypeFullName(genericsArguments.Value.Last());
+
+            var implementation = _staticAnalysisService.GetClassOrRecord(genericNameSyntax);
+            var implementationString = _staticAnalysisService.GetClassOrRecordNesteadName(implementation);
+			var implementationNamespace = _staticAnalysisService.GetNamespace(implementation);
+            var implementationNamespaceString = implementationNamespace.Name
+                .ToFullString()
+                .Trim();
+
+            var conversionInfo = new ExistingConversionInfo(from, to, implementationNamespaceString, implementationString);
+
+            _conversionsStore.Add(conversionInfo.Id, conversionInfo);
+        }
+
         private void StoreMap(TypeSyntax fromTypeSyntax, TypeSyntax toTypeSyntax)
         {
             var from = GetConversionMember(fromTypeSyntax, _semanticAnalysisService.GetPropertySymbolsWithPublicGetter);
@@ -56,19 +91,18 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
         private void StoreMap(ConversionMember from, ConversionMember to)
         {
-            ValidateForClassReferencesAndStore(from, to);
+            var entryPoint = _staticAnalysisService.GetEntryPointInfo();
 
-            var conversionInfo = new ConversionInfo(from, to);
+            var conversionInfo = new GeneratedConversionInfo(from, to, entryPoint.NamespaceName);
 
             if (_conversionsStore.ContainsKey(conversionInfo.Id))
             {
                 return;
             }
 
-            // TODO: Validate map!
+            ValidateForClassReferencesAndStore(from, to);
 
             _conversionsStore.Add(conversionInfo.Id, conversionInfo);
-            _conversionsForm.Add(from.FullName);
         }
 
         private void ValidateForClassReferencesAndStore(ConversionMember from, ConversionMember to)

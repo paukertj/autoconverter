@@ -22,7 +22,7 @@ namespace Paukertj.Autoconverter.Primitives.Services.Converting
 			return convertor.Convert(from);
 		}
 
-		public IList<TTo> Convert<TFrom, TTo>(IList<TFrom> from)
+		public IList<TTo> Convert<TFrom, TTo>(IEnumerable<TFrom> from)
 		{
 			var convertor = _serviceProvider.GetRequiredService<IConverter<TFrom, TTo>>();
 
@@ -31,7 +31,7 @@ namespace Paukertj.Autoconverter.Primitives.Services.Converting
 				.ToList();
 		}
 
-		public IReadOnlyList<TTo> Convert<TFrom, TTo>(IReadOnlyList<TFrom> from)
+		public IReadOnlyCollection<TTo> Convert<TFrom, TTo>(IReadOnlyCollection<TFrom> from)
 		{
 			var convertor = _serviceProvider.GetRequiredService<IConverter<TFrom, TTo>>();
 
