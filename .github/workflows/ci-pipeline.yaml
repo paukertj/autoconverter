@@ -45,6 +45,10 @@ jobs:
       - name: Test
         run: dotnet test --no-restore --verbosity normal --logger "trx;logfilename=test-results.trx"
 
+      - name: Push generated package 'Genarator' to nuget.org registry
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        run: dotnet nuget push ./Generator/bin/Release/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}
+
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: success() || failure()
@@ -52,7 +56,3 @@ jobs:
           name: test-results
           path: ./Generator.Tests/TestResults/test-results.trx
           reporter: dotnet-trx
-
-      - name: Push generated package 'Genarator' to nuget.org registry
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-        run: dotnet nuget push ./Generator/bin/Release/*.nupkg --source "https://api.nuget.org/v3/index.json" --api-key ${{ secrets.NUGET_API_KEY }}
