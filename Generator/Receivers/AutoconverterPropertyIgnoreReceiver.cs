@@ -21,12 +21,6 @@ namespace Paukertj.Autoconverter.Generator.Receivers
             }
 
             return identifierNameSyntax.Identifier.ValueText.AttributeEquals(nameof(AutoconverterPropertyIgnoreAttribute));
-            //if (attributeSyntax?.Name is not GenericNameSyntax genericNameSyntax)
-            //{
-            //    return false;
-            //}
-
-            //return genericNameSyntax.Identifier.ValueText.AttributeEquals(nameof(AutoconverterPropertyIgnoreAttribute<object>));
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 
 namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 {
@@ -9,9 +8,9 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 	{
 		SemanticModel GetSemanticModel(SyntaxTree syntaxTree);
 
-		bool MethodOf(GenericNameSyntax toAnalyze, string shoudBeMemberOfTypeName);
+        bool MemberOf<T>(GenericNameSyntax toAnalyze);
 
-		IReadOnlyList<string> GetAllNamespaces(TypeSyntax syntaxNode);
+        IReadOnlyList<string> GetAllNamespaces(TypeSyntax syntaxNode);
 
 		IReadOnlyList<string> GetAllNamespaces(ITypeSymbol typeSymbol);
 

@@ -2,42 +2,42 @@
 
 namespace Paukertj.Autoconverter.Generator.Extensions
 {
-	internal static class StringExtensions
-	{
-		internal static string GetFileName(this string className)
-		{
-			return className + ".g.cs";
-		}
+    internal static class StringExtensions
+    {
+        internal static string GetFileName(this string className)
+        {
+            return className + ".g.cs";
+        }
 
-		internal static string TrimEnd(this string source, string value)
-		{
-			if (string.IsNullOrEmpty(source))
-			{
-				return source;
-			}
+        internal static string TrimEnd(this string source, string value)
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                return source;
+            }
 
-			int lastIndex = source.LastIndexOf(value);
+            int lastIndex = source.LastIndexOf(value);
 
-			if (lastIndex < 0)
-			{
-				return source;
-			}
+            if (lastIndex < 0)
+            {
+                return source;
+            }
 
-			return source.Remove(lastIndex);
-		}
+            return source.Remove(lastIndex);
+        }
 
-		internal static bool AttributeEquals(this string attr1, string attr2)
-		{
-			if (string.IsNullOrWhiteSpace(attr1) || string.IsNullOrWhiteSpace(attr2))
-			{
-				return false;
-			}
+        internal static bool AttributeEquals(this string attr1, string attr2)
+        {
+            if (string.IsNullOrWhiteSpace(attr1) || string.IsNullOrWhiteSpace(attr2))
+            {
+                return false;
+            }
 
-			string withoutSuffix = attr2.TrimEnd("Attribute");
+            string withoutSuffix = attr2.TrimEnd("Attribute");
 
-            return 
-				attr1 == withoutSuffix ||
+            return
+                attr1 == withoutSuffix ||
                 attr1 == attr2;
         }
-	}
+    }
 }

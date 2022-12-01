@@ -19,7 +19,7 @@ namespace Paukertj.Autoconverter.Generator.Receivers
 
 		public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
 		{
-			var nodes = syntaxNode
+            var nodes = syntaxNode
 				.DescendantNodes()
 				.OfType<TNode>()
 				.Where(_identifier)

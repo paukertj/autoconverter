@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
+using Paukertj.Autoconverter.Primitives.Services.Converting;
 
 namespace Paukertj.Autoconverter.Generator.Receivers
 {
@@ -13,7 +14,7 @@ namespace Paukertj.Autoconverter.Generator.Receivers
 
 		private static bool GetIndetifier(GenericNameSyntax genericNameSyntax)
 		{
-			return genericNameSyntax.Identifier.ValueText == "Convert";
+			return genericNameSyntax.Identifier.ValueText == nameof(IConvertingService.Convert);
 		}
 	}
 }

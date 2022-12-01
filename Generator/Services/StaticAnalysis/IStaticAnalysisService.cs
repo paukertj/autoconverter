@@ -11,6 +11,8 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 
 		ConverterServiceInfo GetConverterServiceInfo();
 
+		string GetClassOrRecordNesteadName(SyntaxNode entrySyntaxNode);
+
 		TypeDeclarationSyntax GetClassOrRecord(SyntaxNode entrySyntaxNode);
 
 		BaseNamespaceDeclarationSyntax GetNamespace(SyntaxNode entrySyntaxNode);

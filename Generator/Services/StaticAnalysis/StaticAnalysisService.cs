@@ -104,6 +104,29 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
             return _converterServiceInfo;
         }
 
+        public string GetClassOrRecordNesteadName(SyntaxNode entrySyntaxNode)
+        {
+            if (entrySyntaxNode == null)
+            {
+                return string.Empty;
+            }
+
+            var closestClassOrRecord = GetClassOrRecord(entrySyntaxNode);
+
+            if (closestClassOrRecord == null)
+            {
+                return string.Empty;
+            }
+
+            var above = GetClassOrRecordNesteadName(closestClassOrRecord.Parent);
+
+            var chr = string.IsNullOrWhiteSpace(above) 
+                ? string.Empty 
+                : ".";
+
+            return above + chr + closestClassOrRecord.Identifier.ValueText;
+		}
+
         public TypeDeclarationSyntax GetClassOrRecord(SyntaxNode entrySyntaxNode)
         {
             return GetOneOfNodes<ClassDeclarationSyntax, RecordDeclarationSyntax, TypeDeclarationSyntax>(entrySyntaxNode);

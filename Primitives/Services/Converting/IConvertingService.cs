@@ -6,8 +6,8 @@ namespace Paukertj.Autoconverter.Primitives.Services.Converting
 	{
 		TTo Convert<TFrom, TTo>(TFrom from);
 
-		IList<TTo> Convert<TFrom, TTo>(IList<TFrom> from);
+		IList<TTo> Convert<TFrom, TTo>(IEnumerable<TFrom> from);
 
-		IReadOnlyList<TTo> Convert<TFrom, TTo>(IReadOnlyList<TFrom> from);
+        IReadOnlyCollection<TTo> Convert<TFrom, TTo>(IReadOnlyCollection<TFrom> from);
 	}
 }

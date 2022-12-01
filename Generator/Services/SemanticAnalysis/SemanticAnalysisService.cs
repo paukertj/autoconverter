@@ -1,8 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Paukertj.Autoconverter.Generator.Receivers;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
@@ -25,14 +23,14 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 			return _semanticModel;
 		}
 
-		public bool MethodOf(GenericNameSyntax toAnalyze, string shoudBeMemberOfTypeName)
+        public bool MemberOf<T>(GenericNameSyntax toAnalyze)
 		{
-			if (toAnalyze == null || string.IsNullOrWhiteSpace(shoudBeMemberOfTypeName))
+			if (toAnalyze == null)
 			{
 				return false;
 			}
 
-			var firstParentNode = toAnalyze.Parent?
+            var firstParentNode = toAnalyze.Parent?
 				.DescendantNodes()?
 				.FirstOrDefault();
 
@@ -41,7 +39,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 				return false;
 			}
 
-			return MethodOf(toAnalyze, firstParentNode, shoudBeMemberOfTypeName);
+			return MemberOf<T>(toAnalyze, firstParentNode);
 		}
 
 		public IReadOnlyList<string> GetAllNamespaces(TypeSyntax syntaxNode)
@@ -211,14 +209,17 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 			return typeInfo.Type.GetMembers();
 		}
 
-		private bool MethodOf(GenericNameSyntax toAnalyze, SyntaxNode syntaxNode, string shoudBeMemberOfTypeName)
+		private bool MemberOf<T>(GenericNameSyntax toAnalyze, SyntaxNode syntaxNode)
 		{
 			var semanticModel = GetSemanticModel(toAnalyze.SyntaxTree);
 
 			var declarationTypeInfo = semanticModel.GetTypeInfo(syntaxNode);
 
-			return declarationTypeInfo.Type?.Name == shoudBeMemberOfTypeName;
-		}
+			string declarationTypeInfoName = declarationTypeInfo.Type.ContainingNamespace.ToDisplayString() + '.' + declarationTypeInfo.Type.MetadataName
+;			string typeName = typeof(T).Namespace + '.' + typeof(T).Name;
+
+			return declarationTypeInfoName == typeName;
+        }
 
 		private void SetSemanticModel(SyntaxTree syntaxTree)
 		{
