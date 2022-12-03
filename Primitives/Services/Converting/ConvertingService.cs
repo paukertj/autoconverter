@@ -24,19 +24,25 @@ namespace Paukertj.Autoconverter.Primitives.Services.Converting
 
 		public IList<TTo> Convert<TFrom, TTo>(IEnumerable<TFrom> from)
 		{
-			var convertor = _serviceProvider.GetRequiredService<IConverter<TFrom, TTo>>();
-
-			return from
-				.Select(f => Convert<TFrom, TTo>(f))
-				.ToList();
+			return ConvertInternal<TFrom, TTo>(from);
 		}
 
 		public IReadOnlyCollection<TTo> Convert<TFrom, TTo>(IReadOnlyCollection<TFrom> from)
 		{
+			return ConvertInternal<TFrom, TTo>(from);
+		}
+
+		public IReadOnlyList<TTo> Convert<TFrom, TTo>(IReadOnlyList<TFrom> from)
+		{
+			return ConvertInternal<TFrom, TTo>(from);
+		}
+
+		private List<TTo> ConvertInternal<TFrom, TTo>(IEnumerable<TFrom> from)
+		{
 			var convertor = _serviceProvider.GetRequiredService<IConverter<TFrom, TTo>>();
 
 			return from
-				.Select(f => Convert<TFrom, TTo>(f))
+				.Select(Convert<TFrom, TTo>)
 				.ToList();
 		}
 	}

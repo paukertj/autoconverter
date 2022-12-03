@@ -9,5 +9,7 @@ namespace Paukertj.Autoconverter.Primitives.Services.Converting
 		IList<TTo> Convert<TFrom, TTo>(IEnumerable<TFrom> from);
 
         IReadOnlyCollection<TTo> Convert<TFrom, TTo>(IReadOnlyCollection<TFrom> from);
+
+		IReadOnlyList<TTo> Convert<TFrom, TTo>(IReadOnlyList<TFrom> from);
 	}
 }
