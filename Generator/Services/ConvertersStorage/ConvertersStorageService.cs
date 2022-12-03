@@ -7,7 +7,6 @@ using Paukertj.Autoconverter.Generator.Exceptions;
 using System.Collections.Generic;
 using System.Linq;
 using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
-using System.Xml.Linq;
 using System;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
@@ -22,7 +21,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
         private readonly IAutoconverterPropertyIgnoreService _autoconverterPropertyIgnoreService;
 
         public ConvertersStorageService(
-            ISemanticAnalysisService semanticAnalysisService, 
+            ISemanticAnalysisService semanticAnalysisService,
             IStaticAnalysisService staticAnalysisService,
             IAutoconverterPropertyIgnoreService autoconverterPropertyIgnoreService)
         {
@@ -71,7 +70,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
             var implementation = _staticAnalysisService.GetClassOrRecord(genericNameSyntax);
             var implementationString = _staticAnalysisService.GetClassOrRecordNesteadName(implementation);
-			var implementationNamespace = _staticAnalysisService.GetNamespace(implementation);
+            var implementationNamespace = _staticAnalysisService.GetNamespace(implementation);
             var implementationNamespaceString = implementationNamespace.Name
                 .ToFullString()
                 .Trim();
@@ -92,7 +91,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
         private void StoreMap(ConversionMember from, ConversionMember to)
         {
             var entryPoint = _staticAnalysisService.GetEntryPointInfo();
-            
+
             var conversionInfo = new GeneratedConversionInfo(from, to, entryPoint.NamespaceName);
 
             if (_conversionsStore.ContainsKey(conversionInfo.Id))
@@ -100,7 +99,8 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
                 return;
             }
 
-            ValidateForClassReferencesAndStore(from, to); 
+            ValidateForClassReferencesAndStore(from, to);
+            CheckForTypesAndMarkThemForConversion(from, to);
 
             _conversionsStore.Add(conversionInfo.Id, conversionInfo);
         }
@@ -188,6 +188,63 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
             }
 
             return typeArgument;
+        }
+
+        private void CheckForTypesAndMarkThemForConversion(ConversionMember from, ConversionMember to)
+        {
+            var mappedSources = from.Properties
+                .Join(to.Properties, f => GetPropertyName(f), t => GetPropertyName(t), (f, t) => new { From = f, To = t })
+                .Where(ft => ft.From.RequireConversion == false && ft.To.RequireConversion == false)
+                .ToList();
+
+            foreach (var mappedSource in mappedSources)
+            {
+                if (CanBeMapped(mappedSource.From.PropertySymbol.Type, mappedSource.To.PropertySymbol.Type))
+                {
+                    continue;
+                }
+
+                string fromFullName = mappedSource.From.GetTypeFullName();
+                string toFullName = mappedSource.To.GetTypeFullName();
+
+                string id = fromFullName + "->" + toFullName;
+
+                if (_conversionsStore.ContainsKey(id))
+                {
+                    mappedSource.From.WillRequireConversion();
+                    mappedSource.To.WillRequireConversion();
+
+                    continue;
+                }
+
+                // TODO: Here I need nullablity check, I can convert not null type to null type
+
+                throw new PropertyTypeMismatchException($"Unable to create map between '({fromFullName}){GetPropertyName(mappedSource.From)}' and '({toFullName}){GetPropertyName(mappedSource.To)}'. There is no conversion between '{fromFullName}' and '{toFullName}'");
+            }
+        }
+
+        private bool CanBeMapped(ITypeSymbol from, ITypeSymbol to)
+        {
+            // This should handle most of the cases include string == string? etc.
+            if (SymbolEqualityComparer.Default.Equals(from, to))
+            {
+                return true;
+            }
+
+            // This is quite wild way to do that, but for such types like Guid == Guid? (basically something that is Nullable<T> I don't know better way
+            // since WithNullableAnnotation seems to doing something else
+
+            string sFrom = from.ToDisplayString();
+            string sTo = to.ToDisplayString();
+
+            if (sFrom.Length + 1 != sTo.Length)
+            {
+                return false;
+            }
+
+            string n = sTo.Replace(sFrom, string.Empty);
+
+            return n == "?";
         }
 
         private void CheckForOrphans(ConversionMember from, ConversionMember to)

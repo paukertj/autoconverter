@@ -37,7 +37,7 @@ namespace Paukertj.Autoconverter.Generator.Extensions
 
 		private static string GetHelpLinkUri(this ExceptionTypes exceptionType)
 		{
-			return $"https://github.com/paukertj/autoconverter/tree/main/Docs/Errors/{exceptionType.GetCode()}.md";
+			return $"https://github.com/paukertj/autoconverter/tree/develop/Docs/Errors/{exceptionType.GetCode()}.md";
 		}
 
         private static string GetMessage(this Exception exception, ExceptionTypes exceptionType)

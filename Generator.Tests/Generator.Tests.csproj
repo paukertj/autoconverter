@@ -39,10 +39,19 @@
     <Compile Update="TestCases\Basic\BasicTestCasesComposition5.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="TestCases\Basic\BasicTestCasesComposition6.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="TestCases\CustomConverter\CustomConverterTestCasesComposition1.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="TestCases\CustomConverter\CustomConverterTestCasesComposition2.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="TestCases\InvalidTypeConversion\InvalidTypeConversionTestCasesComposition1.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="TestCases\InvalidTypeConversion\InvalidTypeConversionTestCasesComposition2.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="TestCases\TestCasesCompositionBase.cs">
