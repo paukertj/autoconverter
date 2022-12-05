@@ -20,7 +20,7 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
         public BasicToEntity1Scenario1 ConvertScenario1()
         {
             var from = GetSourceScenario1();
-
+            
             return _convertingService.Convert<BasicFromEntity1Scenario1, BasicToEntity1Scenario1>(from);
         }
 
@@ -108,5 +108,28 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
                 UnsingnedLong = 111
             };
         }
-    }
+
+		public BasicToEntity1Scenario5 ConvertScenario5()
+		{
+			var from = GetSourceScenario5();
+
+			return _convertingService.Convert<BasicFromEntity1Scenario5, BasicToEntity1Scenario5>(from);
+		}
+
+		public BasicFromEntity1Scenario5 GetSourceScenario5()
+		{
+			return new BasicFromEntity1Scenario5
+			{
+				Bool = true,
+				Byte = 1,
+				Char = 'A',
+				Decimal = 1000,
+				Integer = 10,
+				Long = 100,
+				String = "hello",
+				UnsignedInteger = 11,
+				UnsingnedLong = 111
+			};
+		}
+	}
 }

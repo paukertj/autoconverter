@@ -12,13 +12,16 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion
 
         public IReadOnlyList<string> Namespaces { get; }
 
-        public ConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces)
+        public bool CanBeNull { get; }
+
+        public ConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces, bool canBeNull)
         {
             FullName = fullName;
             Properties = properties
                 .Select(p => new ConversionProperty(p))
                 .ToList();
             Namespaces = namespaces;
+            CanBeNull = canBeNull;
         }
     }
 }

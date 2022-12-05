@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using NUnit.Framework;
 using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition3;
+using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
@@ -80,5 +81,39 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 				.Should()
 				.BeNull();
 		}
+
+		[Test]
+		public void BasicTestCasesComposition3Scenario4()
+		{
+			Diagnostic
+				.Should()
+				.BeEmpty();
+
+			var service = GetTestCaseService();
+
+            var basicFromEntity = service.GetSourceScenario4();
+
+            var basicToEntity = service.ConvertScenario4();
+
+			basicToEntity.Level1?.Count
+				.Should()
+				.Be(2);
+
+            basicToEntity.Level1.First().Level21
+				.Should()
+				.Be(basicFromEntity.Level1.First().Level21);
+
+            basicToEntity.Level1.First().Level22
+				.Should()
+				.Be(basicFromEntity.Level1.First().Level22);
+
+            basicToEntity.Level1.Last().Level21
+                .Should()
+                .Be(basicFromEntity.Level1.Last().Level21);
+
+            basicToEntity.Level1.Last().Level22
+                .Should()
+                .Be(basicFromEntity.Level1.Last().Level22);
+        }
 	}
 }

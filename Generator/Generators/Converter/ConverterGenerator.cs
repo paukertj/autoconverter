@@ -162,7 +162,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                                 IdentifierName(conversionInfo.From.FullName)))))
                 .WithBody(
                     Block(
-                        GetNullCheck(),
+                        GetNullCheck(conversionInfo),
                         GetConversion(conversionInfo))));
 
             return ClassDeclaration(conversionInfo.ImplementationName)
@@ -185,8 +185,13 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                     .WithMembers(List(classBody));
         }
 
-        private IfStatementSyntax GetNullCheck()
+        private StatementSyntax GetNullCheck(GeneratedConversionInfo conversionInfo)
         {
+            if (conversionInfo.From.CanBeNull == false)
+            {
+                return EmptyStatement();
+            }
+
             return IfStatement(
                 BinaryExpression(
                     SyntaxKind.EqualsExpression,

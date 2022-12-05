@@ -23,6 +23,13 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 			return _semanticModel;
 		}
 
+		public TypeInfo GetTypeInfo(TypeSyntax typeSyntax)
+		{
+            var semanticModel = GetSemanticModel(typeSyntax.SyntaxTree);
+
+            return semanticModel.GetTypeInfo(typeSyntax);
+        }
+
         public bool MemberOf<T>(GenericNameSyntax toAnalyze)
 		{
 			if (toAnalyze == null)
