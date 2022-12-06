@@ -8,6 +8,8 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 	{
 		SemanticModel GetSemanticModel(SyntaxTree syntaxTree);
 
+		TypeInfo GetTypeInfo(TypeSyntax typeSyntax);
+
         bool MemberOf<T>(GenericNameSyntax toAnalyze);
 
         IReadOnlyList<string> GetAllNamespaces(TypeSyntax syntaxNode);

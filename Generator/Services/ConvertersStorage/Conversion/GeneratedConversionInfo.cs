@@ -1,6 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Paukertj.Autoconverter.Primitives.Services.Converter;
-using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System;
 using System.Linq;
 
@@ -18,7 +16,6 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion
 
         public bool RequireConversion => From.Properties
             .Any(p => p.RequireConversion) && To.Properties.Any(p => p.RequireConversion);
-
 
         public GeneratedConversionInfo(ConversionMember from, ConversionMember to, string implementationNamespace) : base(from?.FullName, to?.FullName)
         {

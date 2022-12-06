@@ -92,7 +92,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
         private void StoreMap(ConversionMember from, ConversionMember to)
         {
             var entryPoint = _staticAnalysisService.GetEntryPointInfo();
-
+            
             var conversionInfo = new GeneratedConversionInfo(from, to, entryPoint.NamespaceName);
 
             if (_conversionsStore.ContainsKey(conversionInfo.Id))
@@ -100,7 +100,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
                 return;
             }
 
-            ValidateForClassReferencesAndStore(from, to);
+            ValidateForClassReferencesAndStore(from, to); 
 
             _conversionsStore.Add(conversionInfo.Id, conversionInfo);
         }
@@ -244,7 +244,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
         private bool IsNotConvertible(ITypeSymbol typeSymbol)
         {
             // "False" means the we will have some primitive type in hands or something
-            return typeSymbol.SpecialType != SpecialType.None;
+            return typeSymbol.SpecialType != SpecialType.None || typeSymbol.BaseType?.ToDisplayString() == "System.ValueType";
         }
 
         private string GetTypeFullName(TypeSyntax typeSyntax)
@@ -261,8 +261,11 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
             var properties = filter(typeSyntax);
 			var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
+            
+            var typeInfo = _semanticAnalysisService.GetTypeInfo(typeSyntax);
+            var canBeNull = CanBeNull(typeInfo.Type);
 
-            return GetConversionMember(fullName, properties, namespaces);
+            return GetConversionMember(fullName, properties, namespaces, canBeNull);
         }
 
         private ConversionMember GetConversionMember(ITypeSymbol typeSymbol)
@@ -272,13 +275,19 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
             var properties = _semanticAnalysisService.GetPropertySymbols(members);
             var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSymbol);
+            bool canBeNull = CanBeNull(typeSymbol);
 
-            return GetConversionMember(fullName, properties, namespaces);
+            return GetConversionMember(fullName, properties, namespaces, canBeNull);
         }
 
-        private ConversionMember GetConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces)
+        private bool CanBeNull(ITypeSymbol typeSymbol)
         {
-            var member = new ConversionMember(fullName, properties, namespaces);
+            return typeSymbol.TypeKind != TypeKind.Struct;
+        }
+
+        private ConversionMember GetConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces, bool canBeNull)
+        {
+            var member = new ConversionMember(fullName, properties, namespaces, canBeNull);
 
             foreach (var property in member.Properties)
             {

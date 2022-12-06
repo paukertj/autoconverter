@@ -178,5 +178,47 @@ namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
                 .Should()
                 .Be(basicToEntity.Char);
         }
-    }
+
+		[Test]
+		public void BasicTestCasesComposition1Scenario5()
+		{
+			Diagnostic
+				.Should()
+				.BeEmpty();
+
+			var service = GetTestCaseService();
+
+			var basicFromEntity = service.GetSourceScenario5();
+
+			var basicToEntity = service.ConvertScenario5();
+
+			basicFromEntity.Decimal
+				.Should()
+				.Be(basicToEntity.Decimal);
+			basicFromEntity.UnsingnedLong
+				.Should()
+				.Be(basicToEntity.UnsingnedLong);
+			basicFromEntity.Long
+				.Should()
+				.Be(basicToEntity.Long);
+			basicFromEntity.UnsignedInteger
+				.Should()
+				.Be(basicToEntity.UnsignedInteger);
+			basicFromEntity.Integer
+				.Should()
+				.Be(basicToEntity.Integer);
+			basicFromEntity.Byte
+				.Should()
+				.Be(basicToEntity.Byte);
+			basicFromEntity.Bool
+				.Should()
+				.Be(basicToEntity.Bool);
+			basicFromEntity.String
+				.Should()
+				.Be(basicToEntity.String);
+			basicFromEntity.Char
+				.Should()
+				.Be(basicToEntity.Char);
+		}
+	}
 }

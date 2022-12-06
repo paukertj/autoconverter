@@ -12,10 +12,14 @@
 
         BasicFromEntity1Scenario3 GetSourceScenario3();
 
-        BasicToEntity1Scenario3 ConvertScenario3();
+		BasicFromEntity1Scenario5 GetSourceScenario5();
+
+		BasicToEntity1Scenario3 ConvertScenario3();
 
         BasicFromEntity1Scenario4 GetSourceScenario4();
 
         BasicToEntity1Scenario4 ConvertScenario4();
-    }
+
+		BasicToEntity1Scenario5 ConvertScenario5();
+	}
 }
