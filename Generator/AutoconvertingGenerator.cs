@@ -11,6 +11,7 @@ using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
+using Paukertj.Autoconverter.Primitives.Resolvers;
 using Paukertj.Autoconverter.Primitives.Services.Converter;
 using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System;
@@ -25,6 +26,8 @@ namespace Paukertj.Autoconverter.Generator
 		private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
         private readonly ISyntaxNodeStorageService<AttributeSyntax> _propertyIgnoreAttributes;
 		private readonly ISyntaxNodeStorageService<GenericNameSyntax> _converterImplementations;
+		private readonly ISyntaxNodeStorageService<MethodDeclarationSyntax> _resolverImplementations;
+
         private readonly IStaticAnalysisService _staticAnalysisService;
 
 		public AutoconvertingGenerator()
@@ -33,6 +36,7 @@ namespace Paukertj.Autoconverter.Generator
             _wiringEntrypointAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
             _propertyIgnoreAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
             _converterImplementations = new SyntaxNodeStorageService<GenericNameSyntax>();
+            _resolverImplementations = new SyntaxNodeStorageService<MethodDeclarationSyntax>();
             _staticAnalysisService = new StaticAnalysisService(_convertMethodCalls, _wiringEntrypointAttributes);
         }
 
@@ -77,6 +81,16 @@ namespace Paukertj.Autoconverter.Generator
                 convertersStorageService.StoreExistingConverter(convertImplementation);
             }
 
+            foreach (var resolverImplementation in _resolverImplementations.Get())
+            {
+                if (semanticAnalysisService.MemberOf<Resolver>(resolverImplementation) == false)
+                {
+                    continue;
+                }
+
+                convertersStorageService.StoreExistingConverter(convertImplementation);
+            }
+
             // Then process conversions that needs to be generated
             foreach (var convertMethodCall in _convertMethodCalls.Get())
 			{
@@ -102,6 +116,7 @@ namespace Paukertj.Autoconverter.Generator
 			proxyReceiver.RegisterSubscription(new AutoconverterWiringEntrypointSyntaxReceiver(_wiringEntrypointAttributes));
             proxyReceiver.RegisterSubscription(new AutoconverterPropertyIgnoreReceiver(_propertyIgnoreAttributes));
             proxyReceiver.RegisterSubscription(new ConvertImplementationsSyntaxReceiver(_converterImplementations));
+			proxyReceiver.RegisterSubscription(new ResolversSyntaxReceiver(_resolverImplementations));
 
             context.RegisterForSyntaxNotifications(() => proxyReceiver);
 		}
