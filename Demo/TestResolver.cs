@@ -13,7 +13,7 @@ namespace Paukertj.Autoconverter.Demo
         {
             Map<DomainObject, InfrastructureObject>()
                 .Ignore(d => d.Id)
-                .Resolve(d => d.LastName, s => s.LastName);
+                .Resolve(s => s.LastName, d => d.LastName);
         }
     }
 }

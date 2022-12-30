@@ -10,5 +10,10 @@ namespace Paukertj.Autoconverter.Primitives.Resolvers
         {
             return new ConversionResolver<TFrom, TTo>();
         }
+
+        public string ReturnTest()
+        {
+            return "Ok!";
+        }
     }
 }

@@ -10,7 +10,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 
 		TypeInfo GetTypeInfo(TypeSyntax typeSyntax);
 
-        bool MemberOf<T>(GenericNameSyntax toAnalyze);
+        bool MemberOf<T>(SyntaxNode toAnalyze);
 
         IReadOnlyList<string> GetAllNamespaces(TypeSyntax syntaxNode);
 

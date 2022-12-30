@@ -30,7 +30,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
             return semanticModel.GetTypeInfo(typeSyntax);
         }
 
-        public bool MemberOf<T>(GenericNameSyntax toAnalyze)
+        public bool MemberOf<T>(SyntaxNode toAnalyze)
 		{
 			if (toAnalyze == null)
 			{
@@ -39,6 +39,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 
             var firstParentNode = toAnalyze.Parent?
 				.DescendantNodes()?
+				.OfType<NameSyntax>()?
 				.FirstOrDefault();
 
 			if (firstParentNode is null)
@@ -216,7 +217,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 			return typeInfo.Type.GetMembers();
 		}
 
-		private bool MemberOf<T>(GenericNameSyntax toAnalyze, SyntaxNode syntaxNode)
+		private bool MemberOf<T>(SyntaxNode toAnalyze, SyntaxNode syntaxNode)
 		{
 			var semanticModel = GetSemanticModel(toAnalyze.SyntaxTree);
 

@@ -8,6 +8,7 @@ using Paukertj.Autoconverter.Generator.Receivers;
 using Paukertj.Autoconverter.Generator.Receivers.Proxy;
 using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
+using Paukertj.Autoconverter.Generator.Services.ResolverAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage;
@@ -29,15 +30,19 @@ namespace Paukertj.Autoconverter.Generator
 		private readonly ISyntaxNodeStorageService<MethodDeclarationSyntax> _resolverImplementations;
 
         private readonly IStaticAnalysisService _staticAnalysisService;
+		private readonly IResolverAnalysisService _resolverAnalysisService;
 
-		public AutoconvertingGenerator()
+        public AutoconvertingGenerator()
 		{
 			_convertMethodCalls = new SyntaxNodeStorageService<GenericNameSyntax>();
             _wiringEntrypointAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
             _propertyIgnoreAttributes = new SyntaxNodeStorageService<AttributeSyntax>();
             _converterImplementations = new SyntaxNodeStorageService<GenericNameSyntax>();
             _resolverImplementations = new SyntaxNodeStorageService<MethodDeclarationSyntax>();
+
             _staticAnalysisService = new StaticAnalysisService(_convertMethodCalls, _wiringEntrypointAttributes);
+			_resolverAnalysisService = new ResolverAnalysisService();
+
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -81,18 +86,20 @@ namespace Paukertj.Autoconverter.Generator
                 convertersStorageService.StoreExistingConverter(convertImplementation);
             }
 
-            foreach (var resolverImplementation in _resolverImplementations.Get())
-            {
-                if (semanticAnalysisService.MemberOf<Resolver>(resolverImplementation) == false)
-                {
-                    continue;
-                }
+			foreach (var resolverImplementation in _resolverImplementations.Get())
+			{
+				if (semanticAnalysisService.MemberOf<Resolver>(resolverImplementation) == false)
+				{
+					continue;
+				}
 
-                convertersStorageService.StoreExistingConverter(convertImplementation);
-            }
+                _resolverAnalysisService.StoreResolver(resolverImplementation);
 
-            // Then process conversions that needs to be generated
-            foreach (var convertMethodCall in _convertMethodCalls.Get())
+                continue;
+			}
+
+			// Then process conversions that needs to be generated
+			foreach (var convertMethodCall in _convertMethodCalls.Get())
 			{
 				if (semanticAnalysisService.MemberOf<IConvertingService>(convertMethodCall) == false)
 				{
