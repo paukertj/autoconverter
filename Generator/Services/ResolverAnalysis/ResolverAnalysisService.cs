@@ -54,29 +54,29 @@ namespace Paukertj.Autoconverter.Generator.Services.ResolverAnalysis
             }
         }
 
-        private void StoreResolvingInfoResolve(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+        private void StoreResolvingInfoIgnore(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
         {
-            var identifiers = memberAccessExpressionSyntax
+            var arguments = memberAccessExpressionSyntax
                 .ChildNodes()
-                .OfType<IdentifierNameSyntax>()
+                .OfType<ArgumentListSyntax>()
                 .ToList();
 
-            if (identifiers.Count != 1)
+            if (arguments.Count != 1)
             {
-                throw new Exception($"Unexpected count of identifiers, only single identifier expected but '{identifiers}' received"); // TODO
+                throw new Exception($"Unexpected count of arguments, only single argument expected but '{arguments}' received"); // TODO
             }
 
-            string ignoredMember = identifiers
-                .First()
-                .Identifier
-                .ToFullString();
+            //string ignoredMember = arguments
+            //    .First()
+            //    .Identifier
+            //    .ToFullString();
 
-            var resolvingInfoIgnore = new ResolvingInfoIgnore(ignoredMember);
+            var resolvingInfoIgnore = new ResolvingInfoIgnore("ignoredMember");
 
             Store(resolvingInfoIgnore, memberAccessExpressionSyntax);
         }
 
-        private void StoreResolvingInfoIgnore(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+        private void StoreResolvingInfoResolve(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
         {
             return;
         }
@@ -109,7 +109,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ResolverAnalysis
         private string GetIdentifier(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
         {
          
-            return "todo"; // TODO
+            return "todo"; // TODO, should return type
         }
     }
 }

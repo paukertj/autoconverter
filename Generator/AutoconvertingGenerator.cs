@@ -115,7 +115,7 @@ namespace Paukertj.Autoconverter.Generator
 
 		public void Initialize(GeneratorInitializationContext context)
 		{
-			//Debugger.Launch();
+			Debugger.Launch();
 
 			var proxyReceiver = new ProxyReceiver();
 
