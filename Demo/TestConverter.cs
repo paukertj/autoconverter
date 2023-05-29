@@ -8,12 +8,8 @@ using System.Threading.Tasks;
 
 namespace Paukertj.Autoconverter.Demo
 {
-    internal class TestConverter : IConverter<InfrastructureObject, DomainObject> //IConverter<string, int>
+    internal class TestConverter : IConverter<InfrastructureObject, DomainObject>
     {
-        //public int Convert(string from)
-        //{
-        //    throw new NotImplementedException();
-        //}
         public DomainObject Convert(InfrastructureObject from)
         {
             return new DomainObject

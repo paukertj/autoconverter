@@ -9,6 +9,7 @@ using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Extensions;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
+using System.Diagnostics;
 
 namespace Paukertj.Autoconverter.Generator.Generators.Converter
 {
@@ -20,6 +21,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
         private readonly IConvertersStorageService _convertersStorageService;
         private readonly GeneratorExecutionContext _context;
         private readonly IStaticAnalysisService _staticAnalysisService;
+        private readonly string _stringIdentifier;
 
         public ConverterGenerator(
             GeneratorExecutionContext context,
@@ -29,6 +31,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
             _context = context;
             _convertersStorageService = convertersStorageService;
             _staticAnalysisService = staticAnalysisService;
+            _stringIdentifier = typeof(string).Name.ToLower();
         }
 
         public void AddGenerators()
@@ -65,6 +68,31 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                             IdentifierName(conversionInfo.ImplementationNamespace))
                         .WithMembers(
                             SingletonList(GetConverterClass(conversionInfo, convertingServiceInfo)))));
+        }
+
+        private ReturnStatementSyntax GetToStringConvertingService()
+        {
+            return
+                ReturnStatement(
+                    InvocationExpression(
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("System"),
+                                IdentifierName("Convert")),
+                            IdentifierName("ToString")))
+                    .WithArgumentList(
+                        ArgumentList(
+                            SingletonSeparatedList<ArgumentSyntax>(
+                                Argument(
+                                    IdentifierName(
+                                        Identifier(
+                                            TriviaList(),
+                                            SyntaxKind.FromKeyword,
+                                            FromParameter,
+                                            FromParameter,
+                                            TriviaList())))))));
         }
 
         private MemberDeclarationSyntax[] GetConvertingService(GeneratedConversionInfo conversionInfo, ConvertingServiceInfo convertingServiceInfo)
@@ -135,15 +163,19 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
         private MemberDeclarationSyntax GetConverterClass(GeneratedConversionInfo conversionInfo, ConvertingServiceInfo convertingServiceInfo)
         {
             var classBody = new List<MemberDeclarationSyntax>();
-
+     
             if (conversionInfo.RequireConversion)
             {
                 classBody.AddRange(GetConvertingService(conversionInfo, convertingServiceInfo));
             }
 
+            bool sourceIsNullableStruct =
+                (conversionInfo.From.TypeKind == TypeKind.Struct || conversionInfo.From.TypeKind == TypeKind.Structure) &&
+                conversionInfo.From.CanBeNull;
+
             classBody.Add(
                 MethodDeclaration(
-                    IdentifierName(conversionInfo.To.FullName),
+                    IdentifierName(conversionInfo.To.PureFullNameNullable),
                     Identifier("Convert"))
                 .WithModifiers(
                     TokenList(
@@ -159,11 +191,11 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                                     FromParameter,
                                     TriviaList()))
                             .WithType(
-                                IdentifierName(conversionInfo.From.FullName)))))
+                                IdentifierName(conversionInfo.From.PureFullNameNullable)))))
                 .WithBody(
                     Block(
-                        GetNullCheck(conversionInfo),
-                        GetConversion(conversionInfo))));
+                        GetNullCheck(conversionInfo, sourceIsNullableStruct),
+                        GetConversion(conversionInfo, sourceIsNullableStruct))));
 
             return ClassDeclaration(conversionInfo.ImplementationName)
                     .WithModifiers(
@@ -179,13 +211,13 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                                         TypeArgumentList(
                                             SeparatedList<TypeSyntax>(
                                                 new SyntaxNodeOrToken[]{
-                                                    IdentifierName(conversionInfo.From.FullName),
+                                                    IdentifierName(conversionInfo.From.PureFullNameNullable),
                                                     Token(SyntaxKind.CommaToken),
-                                                    IdentifierName(conversionInfo.To.FullName)})))))))
+                                                    IdentifierName(conversionInfo.To.PureFullNameNullable)})))))))
                     .WithMembers(List(classBody));
         }
 
-        private StatementSyntax GetNullCheck(GeneratedConversionInfo conversionInfo)
+        private StatementSyntax GetNullCheck(GeneratedConversionInfo conversionInfo, bool sourceIsNullableStruct)
         {
             if (conversionInfo.From.CanBeNull == false)
             {
@@ -204,7 +236,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                             TriviaList())),
                     LiteralExpression(
                         SyntaxKind.DefaultLiteralExpression,
-                        Token(SyntaxKind.DefaultKeyword))),
+                        Token(sourceIsNullableStruct ? SyntaxKind.NullKeyword : SyntaxKind.DefaultKeyword))),
                 Block(
                     SingletonList<StatementSyntax>(
                         ReturnStatement(
@@ -213,11 +245,16 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                                 Token(SyntaxKind.DefaultKeyword))))));
         }
 
-        private ReturnStatementSyntax GetConversion(GeneratedConversionInfo conversionInfo)
+        private ReturnStatementSyntax GetConversion(GeneratedConversionInfo conversionInfo, bool sourceIsNullableStruct)
         {
+            if (conversionInfo.RequireConversion == false && conversionInfo.To.PureFullName == _stringIdentifier)
+            {
+                return GetToStringConvertingService();
+            }
+
             var properties = conversionInfo.From.Properties
                 .Join(conversionInfo.To.Properties
-                    .Where(t => t.IgnoredForConverionToTypes.Contains(conversionInfo.From.FullName) == false), from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to))
+                    .Where(t => t.IgnoredForConverionToTypes.Contains(conversionInfo.From.FullName) == false), from => from.PropertySymbol.Name, to => to.PropertySymbol.Name, (from, to) => GetPropertyConversion(from, to, sourceIsNullableStruct))
                 .ToList();
 
             int size = properties.Count * 2 - 1;
@@ -238,7 +275,7 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
 
             var conversion = ReturnStatement(
                     ObjectCreationExpression(
-                        IdentifierName(conversionInfo.To.FullName))
+                        IdentifierName(conversionInfo.To.PureFullName))
                     .WithInitializer(
                         InitializerExpression(
                             SyntaxKind.ObjectInitializerExpression,
@@ -247,9 +284,34 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
             return conversion;
         }
 
-        private SyntaxNodeOrToken GetPropertyConversion(ConversionProperty from, ConversionProperty to)
+        private SyntaxNodeOrToken GetPropertyConversion(ConversionProperty from, ConversionProperty to, bool sourceIsNullableStruct)
         {
             bool requireConversion = from.RequireConversion && to.RequireConversion;
+
+            var targetMember = sourceIsNullableStruct
+                ? MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            IdentifierName(
+                                Identifier(
+                                    TriviaList(),
+                                    SyntaxKind.FromKeyword,
+                                    FromParameter,
+                                    FromParameter,
+                                    TriviaList())),
+                            IdentifierName("Value")),
+                        IdentifierName(from.PropertySymbol.Name))
+                : MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        IdentifierName(
+                            Identifier(
+                                TriviaList(),
+                                SyntaxKind.FromKeyword,
+                                FromParameter,
+                                FromParameter,
+                                TriviaList())),
+                        IdentifierName(from.PropertySymbol.Name));
 
             if (requireConversion)
             {
@@ -272,32 +334,14 @@ namespace Paukertj.Autoconverter.Generator.Generators.Converter
                     .WithArgumentList(
                         ArgumentList(
                             SingletonSeparatedList(
-                                Argument(
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        IdentifierName(
-                                            Identifier(
-                                                TriviaList(),
-                                                SyntaxKind.FromKeyword,
-                                                FromParameter,
-                                                FromParameter,
-                                                TriviaList())),
-                                        IdentifierName(from.PropertySymbol.Name)))))));
+                                Argument(targetMember)))));
             }
+
 
             return AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
                     IdentifierName(to.PropertySymbol.Name),
-                    MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        IdentifierName(
-                            Identifier(
-                                TriviaList(),
-                                SyntaxKind.FromKeyword,
-                                FromParameter,
-                                FromParameter,
-                                TriviaList())),
-                        IdentifierName(from.PropertySymbol.Name)));
+                    targetMember);
         }
 
         private string CreateField(string variable)

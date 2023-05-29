@@ -8,6 +8,8 @@ using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
 
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using System.Linq;
+using System;
 
 namespace Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowiring
 {
@@ -39,18 +41,36 @@ namespace Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowir
 				return;
 			}
 
-			var serviceRegistrations = new List<StatementSyntax>(converters.Count);
+            var converterServiceInfo = _staticAnalysisService.GetConverterServiceInfo();
+
+            var serviceRegistrations = new List<StatementSyntax>(converters.Count);
+            var usings = new List<string>
+            {
+                converterServiceInfo.NamespaceName,
+                "Microsoft.Extensions.DependencyInjection"
+            };
 
             foreach (var converter in converters)
             {
                 var serviceRegistration = GetServiceRegistration(converter);
                 serviceRegistrations.Add(serviceRegistration);
+
+                var generatedConversionInfo = converter as GeneratedConversionInfo;
+
+                if (generatedConversionInfo == null)
+                {
+                    continue;
+                }
+
+                usings.AddRange(generatedConversionInfo.From.Namespaces);
+                usings.AddRange(generatedConversionInfo.To.Namespaces);
             }
 
             var entryPoint = _staticAnalysisService.GetEntryPointInfo();
-            var converterServiceInfo = _staticAnalysisService.GetConverterServiceInfo();
 
-            var sourceCode = AddAutowiring(serviceRegistrations, entryPoint, converterServiceInfo)
+            var usingDirectives = GetUsings(usings);
+
+            var sourceCode = AddAutowiring(serviceRegistrations, entryPoint, converterServiceInfo, usingDirectives)
                     .NormalizeWhitespace()
                     .SyntaxTree
                     .GetText()
@@ -59,14 +79,13 @@ namespace Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowir
             _context.AddSource("DiCompositorAutomapping".GetFileName(), sourceCode);
         }
 
-        private CompilationUnitSyntax AddAutowiring(List<StatementSyntax> serviceRegistrations, EntryPointInfo entryPointInfo, ConverterServiceInfo converterServiceInfo)
+        private CompilationUnitSyntax AddAutowiring(List<StatementSyntax> serviceRegistrations, EntryPointInfo entryPointInfo, ConverterServiceInfo converterServiceInfo, List<UsingDirectiveSyntax> usings)
         {
+
+
             return CompilationUnit()
                 .WithUsings(
-                    List(
-                        new UsingDirectiveSyntax[]{
-                            UsingDirective(IdentifierName(converterServiceInfo.NamespaceName)),
-                            UsingDirective(IdentifierName("Microsoft.Extensions.DependencyInjection"))}))
+                    List(usings.Distinct()))
                 .WithMembers(
                     SingletonList<MemberDeclarationSyntax>(
                         NamespaceDeclaration(
@@ -105,8 +124,35 @@ namespace Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowir
                                             Block(serviceRegistrations))))))));
         }
 
+        private List<UsingDirectiveSyntax> GetUsings(List<string> usings)
+        {
+            usings = usings
+                .Distinct()
+                .ToList();
+
+            var usingsSyntax = new List<UsingDirectiveSyntax>(usings.Count);
+
+            foreach (var usingValue in usings)
+            {
+                usingsSyntax.Add(
+                    UsingDirective(
+                            IdentifierName(usingValue)));
+            }
+
+            return usingsSyntax;
+        }
+
         private ExpressionStatementSyntax GetServiceRegistration(ConversionInfoBase conversionInfo)
         {
+            var generatedConversionInfo = conversionInfo as GeneratedConversionInfo;
+
+            string fromFullName = generatedConversionInfo == null 
+                ? conversionInfo.FromFullName 
+                : generatedConversionInfo.From.PureFullNameNullable;
+            string toFullName = generatedConversionInfo == null 
+                ? conversionInfo.ToFullName 
+                : generatedConversionInfo.To.PureFullNameNullable;
+
             return ExpressionStatement(
                     InvocationExpression(
                         MemberAccessExpression(
@@ -124,9 +170,9 @@ namespace Paukertj.Autoconverter.Generator.Generators.DependencyInjectionAutowir
                                                 TypeArgumentList(
                                                     SeparatedList<TypeSyntax>(
                                                         new SyntaxNodeOrToken[]{
-                                                            IdentifierName(conversionInfo.FromFullName),
+                                                            IdentifierName(fromFullName),
                                                             Token(SyntaxKind.CommaToken),
-                                                            IdentifierName(conversionInfo.ToFullName)}))),
+                                                            IdentifierName(toFullName)}))),
                                             Token(SyntaxKind.CommaToken),
                                             IdentifierName(conversionInfo.GetClassFullName())}))))));
         }

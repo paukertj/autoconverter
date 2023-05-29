@@ -1,9 +1,18 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-namespace Paukertj.Autoconverter.Generator.Extensions
+﻿namespace Paukertj.Autoconverter.Generator.Extensions
 {
     internal static class StringExtensions
     {
+        internal static string FirstUpperCase(this string str)
+        {
+            if (string.IsNullOrWhiteSpace(str))
+            {
+                return str;
+            }
+
+            return str[0].ToString().ToUpper() + str.Substring(1);
+
+        }
+
         internal static string GetFileName(this string className)
         {
             return className + ".g.cs";

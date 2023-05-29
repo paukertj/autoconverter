@@ -10,6 +10,7 @@ using Paukertj.Autoconverter.Generator.Services.AutoconverterPropertyIgnore;
 using System;
 using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
+using System.Reflection;
 
 namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 {
@@ -306,23 +307,74 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
 
         private string GetTypeFullName(TypeSyntax typeSyntax)
         {
+            return GetTypeFullName(typeSyntax, typeSyntax.ToString());
+        }
+
+        private string GetTypeFullName(TypeSyntax typeSyntax, string name)
+        {
             var ns = _semanticAnalysisService.GetNamespace(typeSyntax);
-            var name = typeSyntax.ToString();
 
             return ns + '.' + name;
         }
 
+        private (string PureName, string PureNameNullable) GetTypePureFullName(TypeSyntax typeSyntax)
+        {
+            SyntaxNode syntaxNodeToAnalyze = typeSyntax;
+            var nullableTypeSyntax = typeSyntax as NullableTypeSyntax;
+
+            string pureName = null;
+            string pureNameNullable = null;
+
+            if (nullableTypeSyntax != null)
+            {
+                syntaxNodeToAnalyze = nullableTypeSyntax.ChildNodes().First();
+
+            }
+
+            var pedefinedTypeSyntax = syntaxNodeToAnalyze as PredefinedTypeSyntax;
+
+            if (pedefinedTypeSyntax != null)
+            {
+                pureName = pedefinedTypeSyntax.ToString();
+                pureNameNullable = nullableTypeSyntax?.ToString();
+            }
+            else
+            {
+                pureName = GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax);
+                pureNameNullable = nullableTypeSyntax == null 
+                    ? null 
+                    : GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax, nullableTypeSyntax.ToString());
+            }
+
+            pureNameNullable = pureNameNullable ?? pureName;
+
+            return (pureName, pureNameNullable);
+        }
+
         private ConversionMember GetConversionMember(TypeSyntax typeSyntax, Func<TypeSyntax, IReadOnlyList<IPropertySymbol>> filter)
         {
-            string fullName = GetTypeFullName(typeSyntax);
+            var nullableTypeSyntax = typeSyntax as NullableTypeSyntax;
+            TypeSyntax innerTypeSyntax = typeSyntax;
 
-            var properties = filter(typeSyntax);
+            if (nullableTypeSyntax != null)
+            {
+                innerTypeSyntax = nullableTypeSyntax
+                    .ChildNodes()
+                    .FirstOrDefault() as TypeSyntax ?? typeSyntax;
+            }
+
+            string fullName = GetTypeFullName(innerTypeSyntax);
+            var pureNames = GetTypePureFullName(typeSyntax);
+
+            var properties = filter(innerTypeSyntax);
 			var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSyntax);
-            
-            var typeInfo = _semanticAnalysisService.GetTypeInfo(typeSyntax);
-            var canBeNull = CanBeNull(typeInfo.Type);
 
-            return GetConversionMember(fullName, properties, namespaces, canBeNull);
+            var typeInfo = _semanticAnalysisService.GetTypeInfo(typeSyntax);
+            bool canBeNull = nullableTypeSyntax != null 
+                ? true 
+                : CanBeNull(typeInfo.Type);
+
+            return GetConversionMember(fullName, pureNames.PureName, pureNames.PureNameNullable, properties, namespaces, canBeNull, typeInfo.Type.TypeKind);
         }
 
         private ConversionMember GetConversionMember(ITypeSymbol typeSymbol)
@@ -334,7 +386,7 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
             var namespaces = _semanticAnalysisService.GetAllNamespaces(typeSymbol);
             bool canBeNull = CanBeNull(typeSymbol);
 
-            return GetConversionMember(fullName, properties, namespaces, canBeNull);
+            return GetConversionMember(fullName, fullName, fullName, properties, namespaces, canBeNull, typeSymbol.TypeKind);
         }
 
         private bool CanBeNull(ITypeSymbol typeSymbol)
@@ -342,9 +394,9 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
             return typeSymbol.TypeKind != TypeKind.Struct;
         }
 
-        private ConversionMember GetConversionMember(string fullName, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces, bool canBeNull)
+        private ConversionMember GetConversionMember(string fullName, string pureFullName, string pureFullNameNullable, IReadOnlyList<IPropertySymbol> properties, IReadOnlyList<string> namespaces, bool canBeNull, TypeKind typeKind)
         {
-            var member = new ConversionMember(fullName, properties, namespaces, canBeNull);
+            var member = new ConversionMember(fullName, pureFullName, pureFullNameNullable, properties, namespaces, canBeNull, typeKind);
 
             foreach (var property in member.Properties)
             {
