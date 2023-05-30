@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Paukertj.Autoconverter.Generator.Extensions;
 using System;
 using System.Linq;
 
@@ -38,15 +39,25 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion
 
         private static string GetClassName(ConversionMember fromMember, ConversionMember toMember)
         {
-            string from = fromMember.FullName
-                .Replace(".", string.Empty)
-                .ToString();
+            string from = GetConverterClassFragmentName(fromMember);
 
-            string to = toMember.FullName
-                .Replace(".", string.Empty)
-                .ToString();
+            string to = GetConverterClassFragmentName(toMember);
 
             return from + "To" + to + "Converter";
+        }
+
+        private static string GetConverterClassFragmentName(ConversionMember member)
+        {
+            string suffix = member.PureFullName == member.PureFullNameNullable
+                ? string.Empty
+                : "Nullable";
+
+            string name = member.PureFullName
+                .FirstUpperCase()
+                .Replace(".", string.Empty)
+                .ToString();
+        
+            return name + suffix;
         }
     }
 }

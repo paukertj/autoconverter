@@ -42,6 +42,9 @@
     <Compile Update="TestCases\Basic\BasicTestCasesComposition6.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="TestCases\Basic\BasicTestCasesComposition7.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="TestCases\CustomConverter\CustomConverterTestCasesComposition1.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
