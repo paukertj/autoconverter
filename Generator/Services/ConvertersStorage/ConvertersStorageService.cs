@@ -100,6 +100,11 @@ namespace Paukertj.Autoconverter.Generator.Services.ConvertersStorage
                 return;
             }
 
+            if (from.TypeKind == TypeKind.Enum && to.TypeKind == TypeKind.Enum)
+            {
+                //typeInfo.ConvertedType.GetMembers().OfType<IFieldSymbol>()
+            }
+
             ValidateForClassReferencesAndStore(from, to);
             CheckForTypesAndMarkThemForConversion(from, to);
 
