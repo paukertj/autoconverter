@@ -1,5 +1,4 @@
-﻿using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition6;
-using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition7;
+﻿using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition7;
 using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System;
 

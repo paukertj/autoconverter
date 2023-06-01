@@ -1,14 +1,6 @@
 ﻿using FluentAssertions;
-using Microsoft.CodeAnalysis;
 using NUnit.Framework;
-using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition6;
 using Paukertj.Autoconverter.Generator.Tests.Abstraction.TestCases.Basic.Composition7;
-using Paukertj.Autoconverter.Primitives.Services.Converter;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Paukertj.Autoconverter.Generator.Tests.TestCases.Basic
 {
