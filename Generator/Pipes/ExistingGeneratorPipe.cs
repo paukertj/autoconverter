@@ -6,11 +6,11 @@ namespace Paukertj.Autoconverter.Generator.Pipes
 {
     internal sealed class ExistingGeneratorPipe : ICodeGeneratingPipe, ICompilationPipe, ISyntaxReceiverPipe
     {
-        private readonly ICodeGeneratingPipe _convertersStorageService;
+        public ITestService ConvertersStorageService { get; }
 
-        public ExistingGeneratorPipe(ICodeGeneratingPipe convertersStorageService)
+        public ExistingGeneratorPipe(ITestService convertersStorageService)
         {
-            _convertersStorageService = convertersStorageService;
+            ConvertersStorageService = convertersStorageService;
         }
 
         public string GetFileName()

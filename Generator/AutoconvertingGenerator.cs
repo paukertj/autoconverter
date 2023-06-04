@@ -4,7 +4,6 @@ using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Pipes;
 using Paukertj.Autoconverter.Generator.Receivers.Proxy;
 using Paukertj.Autoconverter.Generator.Services.Builder;
-using Paukertj.Autoconverter.Generator.Services.ConvertersStorage;
 using Paukertj.Autoconverter.Generator.Services.Test;
 using System;
 
@@ -19,10 +18,10 @@ namespace Paukertj.Autoconverter.Generator
         {
             _builderService = new BuilderService();
 
-            _builderService.AddServices<ICodeGeneratingPipe>();
-            _builderService.AddServices<ICompilationPipe>();
-            _builderService.AddServices<ISyntaxReceiverPipe>();
-            _builderService.AddServices<ITestService>();
+            _builderService.AddSingletons<ICodeGeneratingPipe>();
+            _builderService.AddSingletons<ICompilationPipe>();
+            _builderService.AddSingletons<ISyntaxReceiverPipe>();
+            _builderService.AddSingletons<ITestService>();
         }
 
         public void Execute(GeneratorExecutionContext context)

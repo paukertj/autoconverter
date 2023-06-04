@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 
 namespace Paukertj.Autoconverter.Generator.Services.Builder
 {
@@ -11,7 +10,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         private readonly Assembly _assembly;
         private readonly IReadOnlyList<Type> _types;
 
-        private Dictionary<Type, List<Service>> _container = new Dictionary<Type, List<Service>>();
+        private Dictionary<Type, List<IService>> _container = new Dictionary<Type, List<IService>>();
 
         public BuilderService()
         {
@@ -19,18 +18,28 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             _types = _assembly.GetTypes();
         }
 
-        public void AddServices<T>()
+        public void AddSingletons<T>()
+        {
+            AddServicesInternal<T>(t => new SingletonService(t));
+        }
+
+        public void AddTransients<T>()
+        {
+            AddServicesInternal<T>(t => new TransientService(t));
+        }
+
+        private void AddServicesInternal<T>(Func<Type, IService> factory)
         {
             var services = _types
                  .Where(t => typeof(T).IsAssignableFrom(t) && t.IsClass)
-                 .Select(t => new Service(t))
+                 .Select(factory)
                  .ToList();
 
-            List<Service> existingServices;
+            List<IService> existingServices;
 
             if (_container.TryGetValue(typeof(T), out existingServices) == false)
             {
-                existingServices = new List<Service>(services.Count);
+                existingServices = new List<IService>(services.Count);
             }
 
             var registeredAndNewServices = services
@@ -68,7 +77,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             }
         }
 
-        private object GetServiceInstance(Service service)
+        private object GetServiceInstance(IService service)
         {
             var constructors = service.Type.GetConstructors();
 
@@ -88,6 +97,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
             if (circularReferences.Count > 0)
             {
+                // This is still naive but should be no coplex references
                 throw new Exception($"Unable to build service '{service.Type}' because there are circular references '{string.Join(", ", circularReferences)}'");
             }
 
@@ -115,13 +125,13 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             return GetServiceInstance(service);
         }
 
-        private record Service
+        private record SingletonService : IService
         {
             public Type Type { get; }
 
             private object _instance = null;
 
-            public Service(Type type)
+            public SingletonService(Type type)
             {
                 Type = type;
             }
@@ -135,6 +145,28 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
                 return _instance;
             }
+        }
+
+        private record TransientService : IService
+        {
+            public Type Type { get; set; }
+
+            public TransientService(Type type)
+            {
+                Type = type;
+            }
+
+            public object GetInstance(params object[] args)
+            {
+                return Activator.CreateInstance(Type, args);
+            }
+        }
+
+        private interface IService
+        {
+            Type Type { get; }
+
+            object GetInstance(params object[] args);
         }
     }
 }

@@ -4,7 +4,9 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 {
     internal interface IBuilderService
     {
-        void AddServices<T>();
+        void AddTransients<T>();
+
+        void AddSingletons<T>();
 
         IEnumerable<T> GetServices<T>();
     }
