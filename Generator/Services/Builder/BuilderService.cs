@@ -1,7 +1,5 @@
-﻿using Microsoft.CodeAnalysis.FlowAnalysis;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design;
 using System.Linq;
 using System.Reflection;
 
@@ -23,7 +21,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         public void AddServices<T>()
         {
             var services = _types
-                 .Where(t => typeof(T).IsAssignableFrom(t) && t.IsClass) 
+                 .Where(t => typeof(T).IsAssignableFrom(t) && t.IsClass)
                  .Select(t => new Service(t))
                  .ToList();
 
@@ -65,9 +63,87 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
             foreach (var service in services)
             {
-                yield return service.GetInstance<T>();
+                yield return (T)GetServiceInstance(service.Type, service);
+                //var constructors = service.Type.GetConstructors();
+
+                //if (constructors.Length > 1)
+                //{
+                //    throw new Exception($"Unable to build service '{service.Type} : {typeof(T)}' because there are '{constructors.Length}' constructors but only '1' expected");
+                //}
+
+                //var paramteres = constructors
+                //    .First()
+                //    .GetParameters()
+                //    .Select;
+
+                //foreach (var parameter in paramteres)
+                //{
+                //    parameter.ParameterType.
+                //}
+
+                //yield return service.GetInstance<T>();
             }
         }
+
+        private object GetServiceInstance(Type type, Service service)
+        {
+            if (service == null)
+            {
+                if (_container.TryGetValue(type, out var services) == false || services?.Any() != true)
+                {
+                    throw new Exception($"Unable to find serivce '{type}'");
+                }
+
+                service = services.First();
+            }
+
+            var constructors = service.Type.GetConstructors();
+
+            if (constructors.Length > 1)
+            {
+                throw new Exception($"Unable to build service '{service.Type} : {type}' because there are '{constructors.Length}' constructors but only '1' expected");
+            }
+
+            var paramters = constructors
+                .First()
+                .GetParameters();
+
+            if (paramters.Length <= 0)
+            {
+                return service.GetInstance();
+            }
+
+            var paramterInstances = paramters
+                .Select(p => GetServiceInstance(p.ParameterType, null))
+                .ToArray();
+
+            return service.GetInstance(paramterInstances);
+        }
+
+        //private IEnumerable<object> GetServices(Type type)
+        //{
+        //    if (_container.TryGetValue(type, out var services) == false)
+        //    {
+        //        throw new Exception($"Unable to find serivce '{type}'");
+        //    }
+
+        //    foreach (var service in services)
+        //    {
+        //        var constructors = service.Type.GetConstructors();
+
+        //        if (constructors.Length > 1)
+        //        {
+        //            throw new Exception($"Unable to build service '{service.Type} : {type}' because there are '{constructors.Length}' constructors but only '1' expected");
+        //        }
+
+        //        var paramteres = constructors
+        //            .First()
+        //            .GetParameters()
+        //            .Select(p => GetServices(p.ParameterType));
+
+        //        yield return service.GetInstance(paramteres);
+        //    }
+        //}
 
         private record Service
         {
@@ -80,14 +156,19 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 Type = type;
             }
 
-            public T GetInstance<T>()
+            public T GetInstance<T>(params object[] args)
+            {
+                return (T)GetInstance(args);
+            }
+
+            public object GetInstance(params object[] args)
             {
                 if (_instance == null)
                 {
-                    _instance = Activator.CreateInstance(Type);
+                    _instance = Activator.CreateInstance(Type, args);
                 }
 
-                return (T)_instance;
+                return _instance;
             }
         }
     }
