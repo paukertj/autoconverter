@@ -6,9 +6,9 @@ namespace Paukertj.Autoconverter.Generator.Pipes
 {
     internal sealed class ExistingGeneratorPipe : ICodeGeneratingPipe, ICompilationPipe, ISyntaxReceiverPipe
     {
-        private readonly ITestService _convertersStorageService;
+        private readonly ICodeGeneratingPipe _convertersStorageService;
 
-        public ExistingGeneratorPipe(ITestService convertersStorageService)
+        public ExistingGeneratorPipe(ICodeGeneratingPipe convertersStorageService)
         {
             _convertersStorageService = convertersStorageService;
         }

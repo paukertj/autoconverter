@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace Paukertj.Autoconverter.Generator.Services.Builder
 {
@@ -63,50 +64,32 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
             foreach (var service in services)
             {
-                yield return (T)GetServiceInstance(service.Type, service);
-                //var constructors = service.Type.GetConstructors();
-
-                //if (constructors.Length > 1)
-                //{
-                //    throw new Exception($"Unable to build service '{service.Type} : {typeof(T)}' because there are '{constructors.Length}' constructors but only '1' expected");
-                //}
-
-                //var paramteres = constructors
-                //    .First()
-                //    .GetParameters()
-                //    .Select;
-
-                //foreach (var parameter in paramteres)
-                //{
-                //    parameter.ParameterType.
-                //}
-
-                //yield return service.GetInstance<T>();
+                yield return (T)GetServiceInstance(service);
             }
         }
 
-        private object GetServiceInstance(Type type, Service service)
+        private object GetServiceInstance(Service service)
         {
-            if (service == null)
-            {
-                if (_container.TryGetValue(type, out var services) == false || services?.Any() != true)
-                {
-                    throw new Exception($"Unable to find serivce '{type}'");
-                }
-
-                service = services.First();
-            }
-
             var constructors = service.Type.GetConstructors();
 
             if (constructors.Length > 1)
             {
-                throw new Exception($"Unable to build service '{service.Type} : {type}' because there are '{constructors.Length}' constructors but only '1' expected");
+                throw new Exception($"Unable to build service '{service.Type}' because there are '{constructors.Length}' constructors but only '1' expected");
             }
 
             var paramters = constructors
                 .First()
                 .GetParameters();
+
+            var circularReferences = service.Type
+                .GetInterfaces()
+                .Join(paramters, s => s, p => p.ParameterType, (s, p) => $"{s} - {p}")
+                .ToList();
+
+            if (circularReferences.Count > 0)
+            {
+                throw new Exception($"Unable to build service '{service.Type}' because there are circular references '{string.Join(", ", circularReferences)}'");
+            }
 
             if (paramters.Length <= 0)
             {
@@ -114,36 +97,23 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             }
 
             var paramterInstances = paramters
-                .Select(p => GetServiceInstance(p.ParameterType, null))
+                .Select(p => ActivateFirstServiceByType(p.ParameterType))
                 .ToArray();
 
             return service.GetInstance(paramterInstances);
         }
 
-        //private IEnumerable<object> GetServices(Type type)
-        //{
-        //    if (_container.TryGetValue(type, out var services) == false)
-        //    {
-        //        throw new Exception($"Unable to find serivce '{type}'");
-        //    }
+        private object ActivateFirstServiceByType(Type type)
+        {
+            if (_container.TryGetValue(type, out var services) == false || services?.Any() != true)
+            {
+                throw new Exception($"Unable to find serivce '{type}'");
+            }
 
-        //    foreach (var service in services)
-        //    {
-        //        var constructors = service.Type.GetConstructors();
+            var service = services.First();
 
-        //        if (constructors.Length > 1)
-        //        {
-        //            throw new Exception($"Unable to build service '{service.Type} : {type}' because there are '{constructors.Length}' constructors but only '1' expected");
-        //        }
-
-        //        var paramteres = constructors
-        //            .First()
-        //            .GetParameters()
-        //            .Select(p => GetServices(p.ParameterType));
-
-        //        yield return service.GetInstance(paramteres);
-        //    }
-        //}
+            return GetServiceInstance(service);
+        }
 
         private record Service
         {
@@ -154,11 +124,6 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             public Service(Type type)
             {
                 Type = type;
-            }
-
-            public T GetInstance<T>(params object[] args)
-            {
-                return (T)GetInstance(args);
             }
 
             public object GetInstance(params object[] args)
