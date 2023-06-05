@@ -1,10 +1,13 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Exceptions;
 using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Pipes;
 using Paukertj.Autoconverter.Generator.Receivers.Proxy;
+using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
 using Paukertj.Autoconverter.Generator.Services.Builder;
-using Paukertj.Autoconverter.Generator.Services.Test;
+using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
+using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using System;
 
 namespace Paukertj.Autoconverter.Generator
@@ -19,21 +22,17 @@ namespace Paukertj.Autoconverter.Generator
             _builderService = new BuilderService();
 
             _builderService.AddSingletons<ICodeGeneratingPipe>();
-            _builderService.AddSingletons<ICompilationPipe>();
-            _builderService.AddSingletons<ISyntaxReceiverPipe>();
-            _builderService.AddSingletons<ITestService>();
+
+            _builderService.AddSingletons<IStaticAnalysisService>();
+
+            _builderService.AddSingletons<ISyntaxNodesRepository>();
         }
 
         public void Execute(GeneratorExecutionContext context)
         {
             try
             {
-                var compilationPipes = _builderService.GetServices<ICompilationPipe>();
-
-                foreach (var compilationPipe in compilationPipes)
-                {
-                    compilationPipe.OnCompilation(context.Compilation);
-                }
+                _builderService.AddSingletons<ISemanticAnalysisService>(context);
 
                 var codeGeneratingPipes = _builderService.GetServices<ICodeGeneratingPipe>();
 
@@ -59,12 +58,14 @@ namespace Paukertj.Autoconverter.Generator
         {
             var proxyReceiver = new ProxyReceiver();
 
-            var syntaxReceiverPipes = _builderService.GetServices<ISyntaxReceiverPipe>();
+            var repositories = _builderService.GetServices<ISyntaxNodesRepository>();
 
-            foreach (var syntaxReceiverPipe in syntaxReceiverPipes)
+            foreach (var repository in repositories)
             {
-                proxyReceiver.RegisterSubscription(syntaxReceiverPipe);
+                proxyReceiver.RegisterSubscription(repository);
             }
+
+            context.RegisterForSyntaxNotifications(() => proxyReceiver);
         }
     }
 }

@@ -18,13 +18,13 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
         private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
         private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
 
-        public StaticAnalysisService(
-            ISyntaxNodeStorageService<GenericNameSyntax> convertMethodCalls,
-            ISyntaxNodeStorageService<AttributeSyntax> wiringEntrypointAttributes)
-        {
-            _convertMethodCalls = convertMethodCalls;
-            _wiringEntrypointAttributes = wiringEntrypointAttributes;
-        }
+        //public StaticAnalysisService(
+        //    ISyntaxNodeStorageService<GenericNameSyntax> convertMethodCalls,
+        //    ISyntaxNodeStorageService<AttributeSyntax> wiringEntrypointAttributes)
+        //{
+        //    _convertMethodCalls = convertMethodCalls;
+        //    _wiringEntrypointAttributes = wiringEntrypointAttributes;
+        //}
 
         public EntryPointInfo GetEntryPointInfo()
         {

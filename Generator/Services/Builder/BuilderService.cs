@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -10,7 +11,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         private readonly Assembly _assembly;
         private readonly IReadOnlyList<Type> _types;
 
-        private Dictionary<Type, List<IService>> _container = new Dictionary<Type, List<IService>>();
+        private Dictionary<Type, List<ServiceBase>> _container = new Dictionary<Type, List<ServiceBase>>();
 
         public BuilderService()
         {
@@ -18,28 +19,28 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             _types = _assembly.GetTypes();
         }
 
-        public void AddSingletons<T>()
+        public void AddSingletons<T>(params object[] args)
         {
-            AddServicesInternal<T>(t => new SingletonService(t));
+            AddServicesInternal<T>(t => new SingletonService(t, args));
         }
 
-        public void AddTransients<T>()
+        public void AddTransients<T>(params object[] args)
         {
-            AddServicesInternal<T>(t => new TransientService(t));
+            AddServicesInternal<T>(t => new TransientService(t, args));
         }
 
-        private void AddServicesInternal<T>(Func<Type, IService> factory)
+        private void AddServicesInternal<T>(Func<Type, ServiceBase> factory)
         {
             var services = _types
                  .Where(t => typeof(T).IsAssignableFrom(t) && t.IsClass)
                  .Select(factory)
                  .ToList();
 
-            List<IService> existingServices;
+            List<ServiceBase> existingServices;
 
             if (_container.TryGetValue(typeof(T), out existingServices) == false)
             {
-                existingServices = new List<IService>(services.Count);
+                existingServices = new List<ServiceBase>(services.Count);
             }
 
             var registeredAndNewServices = services
@@ -77,7 +78,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             }
         }
 
-        private object GetServiceInstance(IService service)
+        private object GetServiceInstance(ServiceBase service)
         {
             var constructors = service.Type.GetConstructors();
 
@@ -106,7 +107,12 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 return service.GetInstance();
             }
 
+
+            var typesToExclude = service.Args?
+                .Select(a => a.GetType()) ?? Enumerable.Empty<Type>();
+
             var paramterInstances = paramters
+                .Where(p => typesToExclude.Contains(p.ParameterType) == false)
                 .Select(p => ActivateFirstServiceByType(p.ParameterType))
                 .ToArray();
 
@@ -125,48 +131,60 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             return GetServiceInstance(service);
         }
 
-        private record SingletonService : IService
+        private class SingletonService : ServiceBase
         {
-            public Type Type { get; }
-
             private object _instance = null;
 
-            public SingletonService(Type type)
+            public SingletonService(Type type, params object[] args)
+                : base(type, args)
             {
-                Type = type;
+
             }
 
-            public object GetInstance(params object[] args)
+            public override object GetInstance(params object[] args)
             {
                 if (_instance == null)
                 {
-                    _instance = Activator.CreateInstance(Type, args);
+                    _instance = base.GetInstance(args);
                 }
 
                 return _instance;
             }
         }
 
-        private record TransientService : IService
+        private class TransientService : ServiceBase
         {
-            public Type Type { get; set; }
-
-            public TransientService(Type type)
+            public TransientService(Type type, params object[] args)
+                : base(type, args)
             {
-                Type = type;
-            }
 
-            public object GetInstance(params object[] args)
-            {
-                return Activator.CreateInstance(Type, args);
-            }
+            } 
         }
 
-        private interface IService
+        private abstract class ServiceBase
         {
-            Type Type { get; }
+            public Type Type { get; }
 
-            object GetInstance(params object[] args);
+            public IReadOnlyList<object> Args { get; }
+
+            protected ServiceBase(Type type, params object[] args)
+            {
+                Type = type;
+                Args = args;
+            }
+
+            public virtual object GetInstance(params object[] args)
+            {
+                if (Args?.Any() == true)
+                {
+                    var a = args.ToList();
+                    a.AddRange(Args);
+
+                    args = a.ToArray();
+                }
+
+                return Activator.CreateInstance(Type, args);
+            }
         }
     }
 }
