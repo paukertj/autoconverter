@@ -6,8 +6,7 @@ namespace Paukertj.Autoconverter.Generator.Code
 {
     internal static class CompilationUnitSyntaxExtensions
     {
-        public static CompilationUnitSyntax WithNamespace<TNode>(this CompilationUnitSyntax compilationUnitSyntax, string name, SyntaxNode innerNode)
-            where TNode : SyntaxNode
+        public static CompilationUnitSyntax WithNamespace(this CompilationUnitSyntax compilationUnitSyntax, string name, SyntaxNode innerNode)
         {
             return compilationUnitSyntax
                 .WithMembers(

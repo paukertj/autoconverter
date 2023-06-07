@@ -107,7 +107,6 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 return service.GetInstance();
             }
 
-
             var typesToExclude = service.Args?
                 .Select(a => a.GetType()) ?? Enumerable.Empty<Type>();
 

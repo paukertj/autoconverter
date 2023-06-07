@@ -1,5 +1,8 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Code;
+using Paukertj.Autoconverter.Generator.Contexts;
 using Paukertj.Autoconverter.Generator.Exceptions;
 using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Pipes;
@@ -9,6 +12,7 @@ using Paukertj.Autoconverter.Generator.Services.Builder;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using System;
+using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator
 {
@@ -34,16 +38,28 @@ namespace Paukertj.Autoconverter.Generator
             {
                 _builderService.AddSingletons<ISemanticAnalysisService>(context);
 
-                var codeGeneratingPipes = _builderService.GetServices<IGeneratorDependencyInjectionRegistering>();
+                var staticAnalysisService = _builderService.GetServices<IStaticAnalysisService>().First();
 
-                foreach (var codeGeneratingPipe in codeGeneratingPipes)
-                {
-                    var registrations = codeGeneratingPipe.GetDependencyInjectionRegistrations();
-                    //string fileName = codeGeneratingPipe.GetFileName();
-                    //string sourceCode = codeGeneratingPipe.GetSourceCode();
+                var entryPoint = staticAnalysisService.GetEntryPointInfo();
 
-                    //context.AddSource(fileName, sourceCode);
-                }
+                var dependencyInjectionRegistrations = _builderService
+                    .GetServices<IGeneratorDependencyInjectionRegistering>()
+                    .SelectMany(s => s.GetDependencyInjectionRegistrations());
+
+                var dependencyInjectionWiring =
+                    SyntaxFactory.CompilationUnit()
+                        .WithNamespace(
+                            entryPoint.NamespaceName,
+                            AutoconverterSyntaxFactory
+                                .DependencyInjectionRegistrationClass(
+                                    entryPoint,
+                                    AutoconverterSyntaxFactory
+                                        .DependencyInjectionRegistrationExtension(
+                                            entryPoint, 
+                                            dependencyInjectionRegistrations
+                                        )
+                                    )
+                            );
             }
             catch (AutmappingExceptionBase e)
             {
