@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Contexts;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -216,7 +217,86 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 			return typeInfo.Type.GetMembers();
 		}
 
-		private bool MemberOf<T>(GenericNameSyntax toAnalyze, SyntaxNode syntaxNode)
+		public TypeGeneratorContext TypeSyntaxToTypeGeneratorContext(TypeSyntax typeSyntax)
+		{
+            SyntaxNode syntaxNodeToAnalyze = typeSyntax;
+            var nullableTypeSyntax = typeSyntax as NullableTypeSyntax;
+
+            string pureName = null;
+            string pureNameNullable = null;
+			string fullName = GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax);
+
+            if (nullableTypeSyntax != null)
+            {
+                syntaxNodeToAnalyze = nullableTypeSyntax.ChildNodes().First();
+            }
+
+            var pedefinedTypeSyntax = syntaxNodeToAnalyze as PredefinedTypeSyntax;
+
+            if (pedefinedTypeSyntax != null)
+            {
+                pureName = pedefinedTypeSyntax.ToString();
+                pureNameNullable = nullableTypeSyntax?.ToString();
+            }
+            else
+            {
+                pureName = GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax);
+                pureNameNullable = nullableTypeSyntax == null
+                    ? null
+                    : GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax, nullableTypeSyntax.ToString());
+            }
+
+            pureNameNullable = pureNameNullable ?? pureName;
+
+			return new TypeGeneratorContext(fullName, pureName, pureNameNullable);
+        }
+
+        public string GetTypePureFullName(TypeSyntax typeSyntax)
+        {
+            SyntaxNode syntaxNodeToAnalyze = typeSyntax;
+            var nullableTypeSyntax = typeSyntax as NullableTypeSyntax;
+
+            if (nullableTypeSyntax != null)
+            {
+                syntaxNodeToAnalyze = nullableTypeSyntax.ChildNodes().First();
+            }
+
+            return nullableTypeSyntax == null
+				? GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax)
+				: GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax, nullableTypeSyntax.ToString());
+
+            //var pedefinedTypeSyntax = syntaxNodeToAnalyze as PredefinedTypeSyntax;
+
+            //if (pedefinedTypeSyntax != null)
+            //{
+            //    pureName = pedefinedTypeSyntax.ToString();
+            //    pureNameNullable = nullableTypeSyntax?.ToString();
+            //}
+            //else
+            //{
+            //    return nullableTypeSyntax == null
+            //        ? GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax)
+            //        : GetTypeFullName(syntaxNodeToAnalyze as TypeSyntax, nullableTypeSyntax.ToString());
+            //}
+
+            //pureNameNullable = pureNameNullable ?? pureName;
+
+            //return new TypeGeneratorContext(fullName, pureName, pureNameNullable);
+        }
+
+        private string GetTypeFullName(TypeSyntax typeSyntax)
+        {
+            return GetTypeFullName(typeSyntax, typeSyntax.ToString());
+        }
+
+        private string GetTypeFullName(TypeSyntax typeSyntax, string name)
+        {
+            var ns = GetNamespace(typeSyntax);
+
+            return ns + '.' + name;
+        }
+
+        private bool MemberOf<T>(GenericNameSyntax toAnalyze, SyntaxNode syntaxNode)
 		{
 			var semanticModel = GetSemanticModel(toAnalyze.SyntaxTree);
 

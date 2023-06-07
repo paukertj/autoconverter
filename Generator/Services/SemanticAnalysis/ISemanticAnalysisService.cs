@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Contexts;
 using System.Collections.Generic;
 
 namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
@@ -27,5 +28,9 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 		IReadOnlyList<IPropertySymbol> GetPropertySymbols(TypeInfo typeInfo);
 
 		IReadOnlyList<IPropertySymbol> GetPropertySymbols(IReadOnlyList<ISymbol> symbols);
-	}
+
+		TypeGeneratorContext TypeSyntaxToTypeGeneratorContext(TypeSyntax typeSyntax);
+
+		string GetTypePureFullName(TypeSyntax typeSyntax);
+    }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Paukertj.Autoconverter.Generator.Pipes
 {
-    internal interface ICodeGeneratingPipe
+    internal interface IGeneratorConverter
     {
         string GetFileName();
 

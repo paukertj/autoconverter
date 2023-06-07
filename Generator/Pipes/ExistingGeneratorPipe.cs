@@ -1,92 +1,59 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Code;
+using Paukertj.Autoconverter.Generator.Contexts;
 using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
-using Paukertj.Autoconverter.Generator.Services.ConvertersStorage.Conversion;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
-using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Primitives.Services.Converter;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Pipes
 {
-    internal sealed class ExistingGeneratorPipe : ICodeGeneratingPipe
+    internal sealed class ExistingGeneratorPipe : IGeneratorDependencyInjectionRegistering
     {
-        private readonly IStaticAnalysisService _staticAnalysisService;
         private readonly ISemanticAnalysisService _semanticAnalysisService;
         private readonly ISyntaxNodesRepository _syntaxNodesRepository;
 
         public ExistingGeneratorPipe(
-            IStaticAnalysisService staticAnalysisService,
             ISemanticAnalysisService semanticAnalysisService,
             ISyntaxNodesRepository syntaxNodesRepository)
         {
-            _staticAnalysisService = staticAnalysisService;
             _semanticAnalysisService = semanticAnalysisService;
             _syntaxNodesRepository = syntaxNodesRepository;
         }
 
-        public string GetFileName()
-        {
-            return string.Empty;
-        }
-
-        public string GetSourceCode()
-        {
-            var nodes = FilterNodes();
-            var conversions = OnCompilationInternal(nodes);
-
-            return string.Empty;
-        }
-
-        private IEnumerable<GenericNameSyntax> FilterNodes()
+        public IEnumerable<StatementSyntax> GetDependencyInjectionRegistrations()
         {
             return _syntaxNodesRepository
                 .OfType<GenericNameSyntax>()
                 .Where(p => p.Identifier.ValueText == nameof(IConverter<object, object>))
-                .Distinct();
+                .Distinct()
+                .Select(GenerateStatementFromSyntax)
+                .Where(s => s != null);
         }
 
-        private IEnumerable<ExistingConversionInfo> OnCompilationInternal(IEnumerable<GenericNameSyntax> nodes)
+        private StatementSyntax GenerateStatementFromSyntax(GenericNameSyntax syntax)
         {
-            foreach (var node in nodes)
+            var genericsArguments = syntax
+                .DescendantNodes()
+                .OfType<TypeArgumentListSyntax>()
+                .FirstOrDefault()?.Arguments;
+
+            if (genericsArguments == null || genericsArguments.Value.Count != 2)
             {
-                var genericsArguments = node
-                    .DescendantNodes()
-                    .OfType<TypeArgumentListSyntax>()
-                    .FirstOrDefault()?.Arguments;
-
-                if (genericsArguments == null || genericsArguments.Value.Count != 2)
-                {
-                    continue;
-                }
-
-                var from = GetTypeFullName(genericsArguments.Value.First());
-                var to = GetTypeFullName(genericsArguments.Value.Last());
-
-                var implementation = _staticAnalysisService.GetClassOrRecord(node);
-                var implementationString = _staticAnalysisService.GetClassOrRecordNesteadName(implementation);
-                var implementationNamespace = _staticAnalysisService.GetNamespace(implementation);
-                var implementationNamespaceString = implementationNamespace.Name
-                    .ToFullString()
-                    .Trim();
-
-                yield return new ExistingConversionInfo(from, to, implementationNamespaceString, implementationString);
+                return null;
             }
-        }
 
-        private string GetTypeFullName(TypeSyntax typeSyntax)
-        {
-            return GetTypeFullName(typeSyntax, typeSyntax.ToString());
-        }
+            var from = genericsArguments.Value.First();
+            var to = genericsArguments.Value.Last();
 
-        private string GetTypeFullName(TypeSyntax typeSyntax, string name)
-        {
-            var ns = _semanticAnalysisService.GetNamespace(typeSyntax);
+            var fromTypeGeneratorContext = _semanticAnalysisService.TypeSyntaxToTypeGeneratorContext(from);
+            var toTypeGeneratorContext = _semanticAnalysisService.TypeSyntaxToTypeGeneratorContext(to);
 
-            return ns + '.' + name;
+            var typeGeneratorContext = new ConversionGeneratorContext<TypeGeneratorContext>(fromTypeGeneratorContext, toTypeGeneratorContext);
+
+            return AutoconverterSyntaxFactory.GeneratorDepenedcyInjectionRegistration(typeGeneratorContext);
         }
     }
 }

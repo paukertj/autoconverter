@@ -21,8 +21,8 @@ namespace Paukertj.Autoconverter.Generator
         {
             _builderService = new BuilderService();
 
-            _builderService.AddSingletons<ICodeGeneratingPipe>();
-
+            _builderService.AddSingletons<IGeneratorConverter>();
+            _builderService.AddSingletons<IGeneratorDependencyInjectionRegistering>();
             _builderService.AddSingletons<IStaticAnalysisService>();
 
             _builderService.AddSingletons<ISyntaxNodesRepository>();
@@ -34,14 +34,15 @@ namespace Paukertj.Autoconverter.Generator
             {
                 _builderService.AddSingletons<ISemanticAnalysisService>(context);
 
-                var codeGeneratingPipes = _builderService.GetServices<ICodeGeneratingPipe>();
+                var codeGeneratingPipes = _builderService.GetServices<IGeneratorDependencyInjectionRegistering>();
 
                 foreach (var codeGeneratingPipe in codeGeneratingPipes)
                 {
-                    string fileName = codeGeneratingPipe.GetFileName();
-                    string sourceCode = codeGeneratingPipe.GetSourceCode();
+                    var registrations = codeGeneratingPipe.GetDependencyInjectionRegistrations();
+                    //string fileName = codeGeneratingPipe.GetFileName();
+                    //string sourceCode = codeGeneratingPipe.GetSourceCode();
 
-                    context.AddSource(fileName, sourceCode);
+                    //context.AddSource(fileName, sourceCode);
                 }
             }
             catch (AutmappingExceptionBase e)
