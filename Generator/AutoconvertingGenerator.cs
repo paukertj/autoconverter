@@ -29,7 +29,7 @@ namespace Paukertj.Autoconverter.Generator
             _builderService.AddSingletons<IGeneratorDependencyInjectionRegistering>();
             _builderService.AddSingletons<IStaticAnalysisService>();
 
-            _builderService.AddSingletons<ISyntaxNodesRepository>();
+            _builderService.AddSingletons<ISyntaxNodesRepository<GenericNameSyntax>>();
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -75,7 +75,7 @@ namespace Paukertj.Autoconverter.Generator
         {
             var proxyReceiver = new ProxyReceiver();
 
-            var repositories = _builderService.GetServices<ISyntaxNodesRepository>();
+            var repositories = _builderService.GetServices<ISyntaxNodesRepository<GenericNameSyntax>>();
 
             foreach (var repository in repositories)
             {

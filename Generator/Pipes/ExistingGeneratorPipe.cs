@@ -13,11 +13,11 @@ namespace Paukertj.Autoconverter.Generator.Pipes
     internal sealed class ExistingGeneratorPipe : IGeneratorDependencyInjectionRegistering
     {
         private readonly ISemanticAnalysisService _semanticAnalysisService;
-        private readonly ISyntaxNodesRepository _syntaxNodesRepository;
+        private readonly ISyntaxNodesRepository<GenericNameSyntax> _syntaxNodesRepository;
 
         public ExistingGeneratorPipe(
             ISemanticAnalysisService semanticAnalysisService,
-            ISyntaxNodesRepository syntaxNodesRepository)
+            ISyntaxNodesRepository<GenericNameSyntax> syntaxNodesRepository)
         {
             _semanticAnalysisService = semanticAnalysisService;
             _syntaxNodesRepository = syntaxNodesRepository;

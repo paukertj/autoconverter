@@ -5,11 +5,12 @@ using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes
 {
-    internal sealed class SyntaxNodesRepository : ISyntaxNodesRepository
+    internal sealed class SyntaxNodesRepository<TSyntaxNode> : ISyntaxNodesRepository<TSyntaxNode>
+        where TSyntaxNode : SyntaxNode
     {
-        private IEnumerable<SyntaxNode> _nodes = Enumerable.Empty<SyntaxNode>();
+        private IEnumerable<TSyntaxNode> _nodes = Enumerable.Empty<TSyntaxNode>();
 
-        public IEnumerator<SyntaxNode> GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return _nodes.GetEnumerator();
         }
@@ -18,13 +19,13 @@ namespace Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes
         {
             var nodes = syntaxNode
                 .DescendantNodes()
-                .OfType<SyntaxNode>()
+                .OfType<TSyntaxNode>()
                 .ToList();
 
             _nodes = _nodes.Concat(nodes);
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
+        public IEnumerator<TSyntaxNode> GetEnumerator()
         {
             return GetEnumerator();
         }

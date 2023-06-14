@@ -32,7 +32,8 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         private void AddServicesInternal<T>(Func<Type, ServiceBase> factory)
         {
             var services = _types
-                 .Where(t => typeof(T).IsAssignableFrom(t) && t.IsClass)
+                .Where(t => t.IsClass && t.Name.Contains("Repository"))
+                 .Where(IsAssignableFrom<T>)
                  .Select(factory)
                  .ToList();
 
@@ -63,6 +64,28 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             }
 
             _container.Add(typeof(T), existingServices);
+        }
+
+        private static bool IsAssignableFrom<T>(Type impelemntation)
+        {
+            if (impelemntation.IsClass == false)
+            {
+                return false;
+            }
+
+            if (impelemntation.IsAssignableFrom(typeof(T)))
+            {
+                return true;
+            }
+
+            if (typeof(T).IsGenericType == false)
+            {
+                return false;
+            }
+
+            return impelemntation
+                .GetInterfaces()
+                .Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(T).GetGenericTypeDefinition());
         }
 
         public IEnumerable<T> GetServices<T>()
@@ -157,7 +180,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 : base(type, args)
             {
 
-            } 
+            }
         }
 
         private abstract class ServiceBase
@@ -182,7 +205,15 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                     args = a.ToArray();
                 }
 
-                return Activator.CreateInstance(Type, args);
+                if (Type.IsGenericType == false)
+                {
+                    return Activator.CreateInstance(Type, args);
+                }
+
+                var genericArguments = Type.GetGenericArguments();
+                var genericType = Type.MakeGenericType(genericArguments);
+
+                return Activator.CreateInstance(genericType, args);
             }
         }
     }
