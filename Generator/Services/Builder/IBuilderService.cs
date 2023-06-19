@@ -8,6 +8,8 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
         void AddSingletons<T>(params object[] args);
 
+        T GetService<T>();
+
         IEnumerable<T> GetServices<T>();
     }
 }

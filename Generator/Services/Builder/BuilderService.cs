@@ -17,22 +17,33 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         {
             _assembly = Assembly.GetExecutingAssembly();
             _types = _assembly.GetTypes();
+
+            RegisterSelf();
+        }
+
+        private void RegisterSelf()
+        {
+            var services = new List<ServiceBase>
+            {
+                new SingletonService(this, null, typeof(IBuilderService))
+            };
+
+            _container.Add(typeof(IBuilderService), services);
         }
 
         public void AddSingletons<T>(params object[] args)
         {
-            AddServicesInternal<T>(t => new SingletonService(t, args));
+            AddServicesInternal<T>(t => new SingletonService(t, typeof(T).GetGenericArguments(), args));
         }
 
         public void AddTransients<T>(params object[] args)
         {
-            AddServicesInternal<T>(t => new TransientService(t, args));
+            AddServicesInternal<T>(t => new TransientService(t, typeof(T).GetGenericArguments(), args));
         }
 
         private void AddServicesInternal<T>(Func<Type, ServiceBase> factory)
         {
             var services = _types
-                .Where(t => t.IsClass && t.Name.Contains("Repository"))
                  .Where(IsAssignableFrom<T>)
                  .Select(factory)
                  .ToList();
@@ -73,7 +84,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 return false;
             }
 
-            if (impelemntation.IsAssignableFrom(typeof(T)))
+            if (typeof(T).IsAssignableFrom(impelemntation))
             {
                 return true;
             }
@@ -86,6 +97,11 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             return impelemntation
                 .GetInterfaces()
                 .Any(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(T).GetGenericTypeDefinition());
+        }
+
+        public T GetService<T>()
+        {
+            return GetServices<T>().FirstOrDefault();
         }
 
         public IEnumerable<T> GetServices<T>()
@@ -108,6 +124,11 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             if (constructors.Length > 1)
             {
                 throw new Exception($"Unable to build service '{service.Type}' because there are '{constructors.Length}' constructors but only '1' expected");
+            }
+
+            if (constructors.Length == 0)
+            {
+                return service.GetInstance();
             }
 
             var paramters = constructors
@@ -157,10 +178,16 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         {
             private object _instance = null;
 
-            public SingletonService(Type type, params object[] args)
-                : base(type, args)
+            public SingletonService(Type type, Type[] genericArguments, params object[] args)
+                : base(type, genericArguments, args)
             {
 
+            }
+
+            public SingletonService(object instance, Type[] genericArguments, Type type)
+                : base(type, genericArguments)
+            {
+                _instance = instance;
             }
 
             public override object GetInstance(params object[] args)
@@ -176,8 +203,8 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
         private class TransientService : ServiceBase
         {
-            public TransientService(Type type, params object[] args)
-                : base(type, args)
+            public TransientService(Type type, Type[] genericArguments, params object[] args)
+                : base(type, genericArguments, args)
             {
 
             }
@@ -187,11 +214,14 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         {
             public Type Type { get; }
 
+            public IReadOnlyList<Type> GenericArguments { get; }
+
             public IReadOnlyList<object> Args { get; }
 
-            protected ServiceBase(Type type, params object[] args)
+            protected ServiceBase(Type type, Type[] genericArguments, params object[] args)
             {
                 Type = type;
+                GenericArguments = genericArguments;
                 Args = args;
             }
 
@@ -210,7 +240,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                     return Activator.CreateInstance(Type, args);
                 }
 
-                var genericArguments = Type.GetGenericArguments();
+                var genericArguments = GenericArguments.ToArray();
                 var genericType = Type.MakeGenericType(genericArguments);
 
                 return Activator.CreateInstance(genericType, args);

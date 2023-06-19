@@ -7,7 +7,6 @@ namespace Paukertj.Autoconverter.Generator.Services.SyntaxNodeStorage
 	{
 		int Count();
 
-
 		void Store(TNode node);
 
 		void Store(IEnumerable<TNode> nodes);

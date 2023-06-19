@@ -6,6 +6,7 @@ using Paukertj.Autoconverter.Primitives.Services.Converter;
 using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
 
 namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 {
@@ -15,16 +16,16 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
         private ConvertingServiceInfo _convertingServiceInfo;
         private ConverterServiceInfo _converterServiceInfo;
 
-        private readonly ISyntaxNodeStorageService<GenericNameSyntax> _convertMethodCalls;
-        private readonly ISyntaxNodeStorageService<AttributeSyntax> _wiringEntrypointAttributes;
+        private readonly ISyntaxNodesRepository<GenericNameSyntax> _convertMethodCalls;
+        private readonly ISyntaxNodesRepository<AttributeSyntax> _wiringEntrypointAttributes;
 
-        //public StaticAnalysisService(
-        //    ISyntaxNodeStorageService<GenericNameSyntax> convertMethodCalls,
-        //    ISyntaxNodeStorageService<AttributeSyntax> wiringEntrypointAttributes)
-        //{
-        //    _convertMethodCalls = convertMethodCalls;
-        //    _wiringEntrypointAttributes = wiringEntrypointAttributes;
-        //}
+        public StaticAnalysisService(
+            ISyntaxNodesRepository<GenericNameSyntax> convertMethodCalls,
+            ISyntaxNodesRepository<AttributeSyntax> wiringEntrypointAttributes)
+        {
+            _convertMethodCalls = convertMethodCalls;
+            _wiringEntrypointAttributes = wiringEntrypointAttributes;
+        }
 
         public EntryPointInfo GetEntryPointInfo()
         {
@@ -33,7 +34,7 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
                 return _entryPointInfo;
             }
 
-            var entryPoints = _wiringEntrypointAttributes.Get();
+            var entryPoints = _wiringEntrypointAttributes.ToList();
 
             if (entryPoints.Count <= 0)
             {

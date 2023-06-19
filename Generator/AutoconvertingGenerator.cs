@@ -29,7 +29,7 @@ namespace Paukertj.Autoconverter.Generator
             _builderService.AddSingletons<IGeneratorDependencyInjectionRegistering>();
             _builderService.AddSingletons<IStaticAnalysisService>();
 
-            _builderService.AddSingletons<ISyntaxNodesRepository<GenericNameSyntax>>();
+            _builderService.AddSingletons<IProxyReceiver>();
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -38,7 +38,7 @@ namespace Paukertj.Autoconverter.Generator
             {
                 _builderService.AddSingletons<ISemanticAnalysisService>(context);
 
-                var staticAnalysisService = _builderService.GetServices<IStaticAnalysisService>().First();
+                var staticAnalysisService = _builderService.GetService<IStaticAnalysisService>();
 
                 var entryPoint = staticAnalysisService.GetEntryPointInfo();
 
@@ -73,14 +73,10 @@ namespace Paukertj.Autoconverter.Generator
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            var proxyReceiver = new ProxyReceiver();
+            var proxyReceiver = _builderService.GetService<IProxyReceiver>();
 
-            var repositories = _builderService.GetServices<ISyntaxNodesRepository<GenericNameSyntax>>();
-
-            foreach (var repository in repositories)
-            {
-                proxyReceiver.RegisterSubscription(repository);
-            }
+            proxyReceiver.RegisterRepository<GenericNameSyntax>();
+            proxyReceiver.RegisterRepository<AttributeSyntax>();
 
             context.RegisterForSyntaxNotifications(() => proxyReceiver);
         }
