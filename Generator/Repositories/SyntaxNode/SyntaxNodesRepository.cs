@@ -8,7 +8,7 @@ namespace Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes
     internal sealed class SyntaxNodesRepository<TSyntaxNode> : ISyntaxNodesRepository<TSyntaxNode>
         where TSyntaxNode : SyntaxNode
     {
-        private IEnumerable<TSyntaxNode> _nodes = Enumerable.Empty<TSyntaxNode>();
+        private List<TSyntaxNode> _nodes = new List<TSyntaxNode>();
 
         IEnumerator IEnumerable.GetEnumerator()
         {
@@ -17,17 +17,15 @@ namespace Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            var nodes = syntaxNode
-                .DescendantNodes()
-                .OfType<TSyntaxNode>()
-                .ToList();
-
-            _nodes = _nodes.Concat(nodes);
+            if (syntaxNode is TSyntaxNode t)
+            {
+                _nodes.Add(t);
+            }
         }
 
         public IEnumerator<TSyntaxNode> GetEnumerator()
         {
-            return GetEnumerator();
+            return _nodes.GetEnumerator();
         }
     }
 }

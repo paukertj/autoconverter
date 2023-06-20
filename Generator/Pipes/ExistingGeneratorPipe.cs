@@ -26,6 +26,7 @@ namespace Paukertj.Autoconverter.Generator.Pipes
         public IEnumerable<StatementSyntax> GetDependencyInjectionRegistrations()
         {
             return _syntaxNodesRepository
+                .ToList()
                 .OfType<GenericNameSyntax>()
                 .Where(p => p.Identifier.ValueText == nameof(IConverter<object, object>))
                 .Distinct()

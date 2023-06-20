@@ -7,6 +7,7 @@ using Paukertj.Autoconverter.Primitives.Services.Converting;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
+using Paukertj.Autoconverter.Primitives.Attributes;
 
 namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
 {
@@ -34,7 +35,13 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
                 return _entryPointInfo;
             }
 
-            var entryPoints = _wiringEntrypointAttributes.ToList();
+            var entryPoints = _wiringEntrypointAttributes
+                .Select(a => a.Name)
+                .OfType<IdentifierNameSyntax>()
+                .Where(n => n != null && n.Identifier.ValueText.AttributeEquals(nameof(AutoconverterWiringEntrypointAttribute)))
+                .ToList();
+
+            var debug = _wiringEntrypointAttributes.Select(a => a.Name).ToList();
 
             if (entryPoints.Count <= 0)
             {

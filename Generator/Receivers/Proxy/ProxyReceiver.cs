@@ -1,5 +1,4 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
 using Paukertj.Autoconverter.Generator.Services.Builder;
 using System.Collections.Generic;

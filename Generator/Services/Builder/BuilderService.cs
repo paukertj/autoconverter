@@ -11,7 +11,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
         private readonly Assembly _assembly;
         private readonly IReadOnlyList<Type> _types;
 
-        private Dictionary<Type, List<ServiceBase>> _container = new Dictionary<Type, List<ServiceBase>>();
+        private Dictionary<ServiceKey, List<ServiceBase>> _container = new Dictionary<ServiceKey, List<ServiceBase>>();
 
         public BuilderService()
         {
@@ -28,7 +28,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 new SingletonService(this, null, typeof(IBuilderService))
             };
 
-            _container.Add(typeof(IBuilderService), services);
+            _container.Add(ServiceKey.Create<IBuilderService>(), services);
         }
 
         public void AddSingletons<T>(params object[] args)
@@ -50,13 +50,16 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
             List<ServiceBase> existingServices;
 
-            if (_container.TryGetValue(typeof(T), out existingServices) == false)
+            var serviceKey = ServiceKey.Create<T>();
+
+            if (_container.TryGetValue(ServiceKey.Create<T>(), out existingServices) == false)
             {
                 existingServices = new List<ServiceBase>(services.Count);
+                _container.Add(ServiceKey.Create<T>(), existingServices);
             }
 
             var registeredAndNewServices = services
-                .GroupJoin(_container.Values.SelectMany(s => s), n => n.Type, r => r.Type, (n, r) => new
+                .GroupJoin(_container.Values.SelectMany(s => s), n => new ServiceKey(n.Type, n.GenericArguments), r => new ServiceKey(r.Type, r.GenericArguments), (n, r) => new
                 {
                     New = n,
                     Registered = r?.FirstOrDefault()
@@ -73,8 +76,6 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                     existingServices.Add(registeredAndNewService.Registered);
                 }
             }
-
-            _container.Add(typeof(T), existingServices);
         }
 
         private static bool IsAssignableFrom<T>(Type impelemntation)
@@ -106,7 +107,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
         public IEnumerable<T> GetServices<T>()
         {
-            if (_container.TryGetValue(typeof(T), out var services) == false)
+            if (_container.TryGetValue(ServiceKey.Create<T>(), out var services) == false)
             {
                 throw new Exception($"Unable to find serivce '{typeof(T)}'");
             }
@@ -164,7 +165,9 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
 
         private object ActivateFirstServiceByType(Type type)
         {
-            if (_container.TryGetValue(type, out var services) == false || services?.Any() != true)
+            var key = new ServiceKey(type, type.GetGenericArguments());
+
+            if (_container.TryGetValue(key, out var services) == false || services?.Any() != true)
             {
                 throw new Exception($"Unable to find serivce '{type}'");
             }
@@ -210,7 +213,7 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             }
         }
 
-        private abstract class ServiceBase
+        private abstract class ServiceBase 
         {
             public Type Type { get; }
 
@@ -244,6 +247,62 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
                 var genericType = Type.MakeGenericType(genericArguments);
 
                 return Activator.CreateInstance(genericType, args);
+            }
+        }
+
+        private class ServiceKey
+        {
+            public Type Type { get; }
+
+            public IReadOnlyList<Type> GenericArgument { get; }
+
+
+            public ServiceKey(Type type, IEnumerable<Type> genericArguments)
+            {
+                Type = type;
+                GenericArgument = genericArguments?.ToList();
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is ServiceKey serviceKey == false)
+                {
+                    return false;
+                }
+
+                bool iHaveGeneric = GenericArgument?.Any() == true;
+                bool theyHaveGeneric = serviceKey.GenericArgument?.Any() == true;
+
+                if (iHaveGeneric != theyHaveGeneric)
+                {
+                    return false;
+                }
+
+                bool isValidType = Type == serviceKey.Type;
+
+                if (iHaveGeneric == theyHaveGeneric && iHaveGeneric == false)
+                {
+                    return isValidType;
+                }
+
+                int sameGenerics = GenericArgument
+                    .Join(serviceKey.GenericArgument, i => i, t => t, (i, t) => i)
+                    .Count();
+
+                return 
+                    isValidType && 
+                    sameGenerics == GenericArgument.Count && 
+                    GenericArgument.Count == serviceKey.GenericArgument.Count;
+            }
+
+            public override int GetHashCode()
+            {
+                return 0;
+            }
+
+            public static ServiceKey Create<T>()
+            {
+                return new ServiceKey(typeof(T), typeof(T).GetGenericArguments());
             }
         }
     }
