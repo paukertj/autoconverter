@@ -4,7 +4,7 @@ namespace Paukertj.Autoconverter.Generator.Receivers.Proxy
 {
 	public interface IProxyReceiver : ISyntaxReceiver
 	{
-        void RegisterRepository<TSyntaxNode>()
+        IProxyReceiver RegisterRepository<TSyntaxNode>()
             where TSyntaxNode : SyntaxNode;
     }
 }

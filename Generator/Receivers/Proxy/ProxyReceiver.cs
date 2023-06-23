@@ -16,7 +16,7 @@ namespace Paukertj.Autoconverter.Generator.Receivers.Proxy
 			_builderService = builderService;
         }
 
-        public void RegisterRepository<TSyntaxNode>()
+        public IProxyReceiver RegisterRepository<TSyntaxNode>()
 			where TSyntaxNode : SyntaxNode
         {
 			_builderService.AddSingletons<ISyntaxNodesRepository<TSyntaxNode>>();
@@ -24,6 +24,8 @@ namespace Paukertj.Autoconverter.Generator.Receivers.Proxy
 			var repositories = _builderService.GetServices<ISyntaxNodesRepository<TSyntaxNode>>();
 
             _receivers.AddRange(repositories);
+
+			return this;
         }
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)

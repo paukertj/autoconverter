@@ -54,10 +54,10 @@ namespace Paukertj.Autoconverter.Generator
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            var proxyReceiver = _builderService.GetService<IProxyReceiver>();
-
-            proxyReceiver.RegisterRepository<GenericNameSyntax>();
-            proxyReceiver.RegisterRepository<AttributeSyntax>();
+            var proxyReceiver = _builderService
+                .GetService<IProxyReceiver>()
+                .RegisterRepository<GenericNameSyntax>()
+                .RegisterRepository<AttributeSyntax>();
 
             context.RegisterForSyntaxNotifications(() => proxyReceiver);
         }
