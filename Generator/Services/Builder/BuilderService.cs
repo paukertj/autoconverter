@@ -31,14 +31,18 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             _container.Add(ServiceKey.Create<IBuilderService>(), services);
         }
 
-        public void AddSingletons<T>(params object[] args)
+        public IBuilderService AddSingletons<T>(params object[] args)
         {
             AddServicesInternal<T>(t => new SingletonService(t, typeof(T).GetGenericArguments(), args));
+
+            return this;
         }
 
-        public void AddTransients<T>(params object[] args)
+        public IBuilderService AddTransients<T>(params object[] args)
         {
             AddServicesInternal<T>(t => new TransientService(t, typeof(T).GetGenericArguments(), args));
+
+            return this;
         }
 
         private void AddServicesInternal<T>(Func<Type, ServiceBase> factory)

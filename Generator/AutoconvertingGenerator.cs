@@ -11,6 +11,7 @@ using Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes;
 using Paukertj.Autoconverter.Generator.Services.Builder;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
+using Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating;
 using System;
 using System.Linq;
 
@@ -23,22 +24,31 @@ namespace Paukertj.Autoconverter.Generator
 
         public AutoconvertingGenerator()
         {
-            _builderService = new BuilderService();
-
-            _builderService.AddSingletons<IGeneratorConverter>();
-            _builderService.AddSingletons<IGeneratorDependencyInjectionRegistering>();
-            _builderService.AddSingletons<IStaticAnalysisService>();
-
-            _builderService.AddSingletons<IProxyReceiver>();
+            _builderService = new BuilderService()
+                .AddSingletons<IGeneratorConverter>()
+                .AddSingletons<IGeneratorDependencyInjectionRegistering>()
+                .AddSingletons<IGeneratorDependencyInjectionRegistering>()
+                .AddSingletons<IStaticAnalysisService>()
+                .AddSingletons<IProxyReceiver>();
         }
 
         public void Execute(GeneratorExecutionContext context)
         {
             try
             {
-                _builderService.AddSingletons<ISemanticAnalysisService>(context);
+                _builderService
+                    .AddSingletons<ISemanticAnalysisService>(context);
 
-                var staticAnalysisService = _builderService.GetService<IStaticAnalysisService>();
+                var staticAnalysisService = _builderService
+                    .GetService<IStaticAnalysisService>();
+
+                var sourceCodeGeneratingService = _builderService
+                    .AddSingletons<ISourceCodeGeneratingService>(context)
+                    .GetService<ISourceCodeGeneratingService>();
+
+                // TODO More generators
+
+                sourceCodeGeneratingService.AddServiceRegistration();
 
                 var entryPoint = staticAnalysisService.GetEntryPointInfo();
 
@@ -55,7 +65,7 @@ namespace Paukertj.Autoconverter.Generator
                                     entryPoint,
                                     AutoconverterSyntaxFactory
                                         .DependencyInjectionRegistrationExtension(
-                                            entryPoint, 
+                                            entryPoint,
                                             dependencyInjectionRegistrations
                                         )
                                     )
