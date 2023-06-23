@@ -19,10 +19,9 @@ namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
         private readonly IStaticAnalysisService _staticAnalysisService;
 
         public SourceCodeGeneratingService(
-            //GeneratorExecutionContext context, 
+            GeneratorExecutionContext context, 
             IBuilderService builderService, 
-            IStaticAnalysisService staticAnalysisService,
-            GeneratorExecutionContext context)
+            IStaticAnalysisService staticAnalysisService)
         {
             _context = context;
             _builderService = builderService;

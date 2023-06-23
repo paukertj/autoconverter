@@ -236,8 +236,8 @@ namespace Paukertj.Autoconverter.Generator.Services.Builder
             {
                 if (Args?.Any() == true)
                 {
-                    var a = args.ToList();
-                    a.AddRange(Args);
+                    var a = Args.ToList();
+                    a.AddRange(args);
 
                     args = a.ToArray();
                 }
