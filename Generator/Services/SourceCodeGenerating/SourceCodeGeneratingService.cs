@@ -2,24 +2,27 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Code;
+using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Pipes;
 using Paukertj.Autoconverter.Generator.Services.Builder;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
-using System;
 using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
 {
     internal sealed class SourceCodeGeneratingService : ISourceCodeGeneratingService
     {
+        private const string AutoconverterServiceRegistrationClassName = "AutoconverterServiceRegistration";
+
         private readonly GeneratorExecutionContext _context;
         private readonly IBuilderService _builderService;
         private readonly IStaticAnalysisService _staticAnalysisService;
 
         public SourceCodeGeneratingService(
-            GeneratorExecutionContext context, 
+            //GeneratorExecutionContext context, 
             IBuilderService builderService, 
-            IStaticAnalysisService staticAnalysisService)
+            IStaticAnalysisService staticAnalysisService,
+            GeneratorExecutionContext context)
         {
             _context = context;
             _builderService = builderService;
@@ -51,13 +54,18 @@ namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
 
 
             var sourceCode = GenerateSourceCodeFromCompilationUnitSyntax(dependencyInjectionWiring);
+            var fileName = AutoconverterServiceRegistrationClassName.GetFileName();
 
-
+            _context.AddSource(fileName, sourceCode);
         }
 
         private string GenerateSourceCodeFromCompilationUnitSyntax(CompilationUnitSyntax compilationUnitSyntax)
         {
-
+            return compilationUnitSyntax
+                .NormalizeWhitespace()
+                .SyntaxTree
+                .GetText()
+                .ToString();
         }
     }
 }
