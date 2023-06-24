@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Contexts;
+using Paukertj.Autoconverter.Generator.Entities;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -312,5 +313,23 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 		{
 			_semanticModel = _context.Compilation.GetSemanticModel(syntaxTree);
 		}
-	}
+
+        public TypeConversion GetConversion(GenericNameSyntax toAnalyze)
+        {
+            var genericsArguments = toAnalyze
+                .DescendantNodes()
+                .OfType<TypeArgumentListSyntax>()
+                .FirstOrDefault()?.Arguments;
+
+            if (genericsArguments == null || genericsArguments.Value.Count != 2)
+            {
+                return null;
+            }
+
+            var from = genericsArguments.Value.First();
+            var to = genericsArguments.Value.Last();
+
+			return new TypeConversion(from, to);
+        }
+    }
 }

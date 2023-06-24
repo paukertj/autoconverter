@@ -6,6 +6,7 @@ using Paukertj.Autoconverter.Generator.Extensions;
 using Paukertj.Autoconverter.Generator.Pipes;
 using Paukertj.Autoconverter.Generator.Services.Builder;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
@@ -34,7 +35,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
 
             var dependencyInjectionRegistrations = _builderService
                 .GetServices<IGeneratorDependencyInjectionRegistering>()
-                .SelectMany(s => s.GetDependencyInjectionRegistrations());
+                .SelectMany(GetDependencyInjectionRegistrations);
 
             var dependencyInjectionWiring =
                 SyntaxFactory.CompilationUnit()
@@ -56,6 +57,14 @@ namespace Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating
             var fileName = AutoconverterServiceRegistrationClassName.GetFileName();
 
             _context.AddSource(fileName, sourceCode);
+        }
+
+        private IEnumerable<StatementSyntax> GetDependencyInjectionRegistrations(IGeneratorDependencyInjectionRegistering generatorDependencyInjectionRegistering)
+        {
+            // TODO: Cache
+            var data = generatorDependencyInjectionRegistering.GetData();
+
+            return generatorDependencyInjectionRegistering.GetDependencyInjectionRegistrations(data);
         }
 
         private string GenerateSourceCodeFromCompilationUnitSyntax(CompilationUnitSyntax compilationUnitSyntax)

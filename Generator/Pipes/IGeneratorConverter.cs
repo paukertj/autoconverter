@@ -1,12 +1,11 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Entities;
 using System.Collections.Generic;
 
 namespace Paukertj.Autoconverter.Generator.Pipes
 {
-    internal interface IGeneratorConverter
+    internal interface IGeneratorConverter : IAnalyzer
     {
-        string GetFileName();
-
-        IEnumerable<StatementSyntax> GetGeneratorImplementation();
+        IEnumerable<StatementSyntax> GetGeneratorImplementation(IEnumerable<TypeConversion> conversions);
     }
 }

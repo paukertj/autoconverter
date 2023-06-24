@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Paukertj.Autoconverter.Generator.Contexts;
+using Paukertj.Autoconverter.Generator.Entities;
 using System.Collections.Generic;
 
 namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
@@ -32,5 +33,7 @@ namespace Paukertj.Autoconverter.Generator.Services.SemanticAnalysis
 		TypeGeneratorContext TypeSyntaxToTypeGeneratorContext(TypeSyntax typeSyntax);
 
 		string GetTypePureFullName(TypeSyntax typeSyntax);
+
+        TypeConversion GetConversion(GenericNameSyntax toAnalyze);
     }
 }

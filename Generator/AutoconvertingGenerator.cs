@@ -10,6 +10,7 @@ using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating;
 using System;
 using Paukertj.Autoconverter.Generator.Services.ConversionLogic;
+using Paukertj.Autoconverter.Generator.Services.AutoconverterSyntax;
 
 namespace Paukertj.Autoconverter.Generator
 {
@@ -26,7 +27,8 @@ namespace Paukertj.Autoconverter.Generator
                 .AddSingletons<IGeneratorDependencyInjectionRegistering>()
                 .AddSingletons<IStaticAnalysisService>()
                 .AddSingletons<IProxyReceiver>()
-                .AddSingletons<IConversionLogicService>();
+                .AddSingletons<IConversionLogicService>()
+                .AddSingletons<IAutoconverterSyntaxService>();
         }
 
         public void Execute(GeneratorExecutionContext context)

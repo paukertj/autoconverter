@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Paukertj.Autoconverter.Generator.Entities;
 using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using System.Collections.Generic;
 
@@ -14,7 +15,6 @@ namespace Paukertj.Autoconverter.Generator.Services.ConversionLogic
             _semanticAnalysisService = semanticAnalysisService;
             _conversions = new HashSet<string>();
         }
-
 
         public bool ConverterExists(TypeSyntax conversionFrom, TypeSyntax conversionTo)
         {
