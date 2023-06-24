@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Paukertj.Autoconverter.Generator.Repositories.SyntaxNodes
 {

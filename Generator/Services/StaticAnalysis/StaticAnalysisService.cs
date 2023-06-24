@@ -28,6 +28,7 @@ namespace Paukertj.Autoconverter.Generator.Services.StaticAnalysis
             _wiringEntrypointAttributes = wiringEntrypointAttributes;
         }
 
+
         public EntryPointInfo GetEntryPointInfo()
         {
             if (_entryPointInfo != null)

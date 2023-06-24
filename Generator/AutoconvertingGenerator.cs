@@ -9,6 +9,7 @@ using Paukertj.Autoconverter.Generator.Services.SemanticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.StaticAnalysis;
 using Paukertj.Autoconverter.Generator.Services.SourceCodeGenerating;
 using System;
+using Paukertj.Autoconverter.Generator.Services.ConversionLogic;
 
 namespace Paukertj.Autoconverter.Generator
 {
@@ -24,7 +25,8 @@ namespace Paukertj.Autoconverter.Generator
                 .AddSingletons<IGeneratorDependencyInjectionRegistering>()
                 .AddSingletons<IGeneratorDependencyInjectionRegistering>()
                 .AddSingletons<IStaticAnalysisService>()
-                .AddSingletons<IProxyReceiver>();
+                .AddSingletons<IProxyReceiver>()
+                .AddSingletons<IConversionLogicService>();
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -38,9 +40,8 @@ namespace Paukertj.Autoconverter.Generator
                     .AddSingletons<ISourceCodeGeneratingService>(context)
                     .GetService<ISourceCodeGeneratingService>();
 
-                // TODO More generators
-
                 sourceCodeGeneratingService.AddServiceRegistration();
+                // TODO More generators
             }
             catch (AutmappingExceptionBase e)
             {
